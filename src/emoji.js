@@ -31,7 +31,7 @@ export function isTag(p) {
 }
 
 /**
- * @param {numnber} p
+ * @param {number} p
  * @return {boolean} whether the passed rune can appear before a keycap
  */
 export function isBeforeCap(p) {

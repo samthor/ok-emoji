@@ -2,14 +2,13 @@
 import {emojiPointCount, iterateEmoji, isFlagPoint} from './emoji.js';
 
 // are we on a platform where emoji are all 1.0 width?
-const debugFixed = false;
-const fixedWidthEmoji = debugFixed ||
+const fixedWidthEmoji =
     Boolean(/Mac|iP(hone|od|ad)/.exec(navigator.platform)) ||  // Mac and iOS
     Boolean(/Android/.exec(navigator.userAgent))           ||  // Android
     false;
 
 const letterSpacing = 1024;  // must be sensibly large enough so we round over emoji
-const fontSize = 12;
+const fontSize = 100;        // large enough to unambiguate other wide chars
 
 const hider = document.createElement('div');
 hider.style.overflow = 'hidden';
@@ -22,36 +21,41 @@ measurer.style.display = 'inline-block';
 measurer.style.whiteSpace = 'nowrap';
 measurer.style.fontSize = `${fontSize}px`;
 measurer.style.lineHeight = 'normal';
-measurer.style.fontFamily = fontsFor(navigator.platform);
+measurer.style.fontFamily = 'sans-serif';
 
 hider.appendChild(measurer);
 document.body.appendChild(hider);
 
 /**
- * @param {{width: number, height: number}}
- * @return {{w: number, h: number}}
+ * @return {{width: number, height: number}}
  */
-function cloneSize({width, height}) {
-  return {w: width, h: height};
+function measure() {
+  // use the height of the hider, as it grows to expand 'large' chars (the measurer itself doesn't)
+  // grow, it just renders 'outside'
+  const box = hider.getBoundingClientRect();
+  return {width: measurer.offetWidth, height: hider.offsetHeight};
 }
 
 // render a char that will show up as an invalid Unicode square box
 measurer.textContent = '\u{ffffd}';
-const invalidBoxSize = cloneSize(measurer.getBoundingClientRect());
+const invalidBoxSize = measure();
 
 // render an emoji
 measurer.textContent = '\u{1f602}';
-const validEmojiSize = cloneSize(measurer.getBoundingClientRect());
+const validEmojiSize = measure();
 
 // check invalid vs emoji
-const useInvalidHeight = (validEmojiSize.h !== invalidBoxSize.h);
+const useInvalidHeight = (validEmojiSize.height !== invalidBoxSize.height);
 export const isSingleAmbig = !useInvalidHeight && !fixedWidthEmoji;
 if (isSingleAmbig) {
-  // FIXME(samthor): This could be the case on Windows or Linux, depending on their font rendering.
-  // We can't tell isSingleValidEmoji here: only "is single point".
+  // This is somewhat unlikely, but possible. In this case, we can't tell single characters from
+  // emoji, because everything has the same height.
   console.warn(`unable to tell single char from emoji char`);
+} else {
+  // If we have to use this (because we're variable-width), it's still possible that certain
+  // Unicode characters will be detected as emoji, because they have the same height— e.g.,
+  // certain Japanese characters.
 }
-
 // _now_ set letterSpacing for rest
 measurer.style.letterSpacing = `${letterSpacing}px`;
 
@@ -63,13 +67,19 @@ const fixedWidthMeasure = (function() {
     return null;
   }
 
+  // nb. The choice of canvasFontSize leverages weird Mac quirks. Using e.g. 1 or 100 doesn't
+  // work; 10.5 seems to work well, because other fixed-width single-chars are different size.
+  // Ostensibly, emoji don't like to render on pixel widths, and on macOS 10.13 it rounds up to 14.
+  const canvasFontSize = 10.5;
+
   const canvas = /** @type {!HTMLCanvasElement} */ (document.createElement('canvas'));
   const context = /** @type {!CanvasRenderingContext2D} */ (canvas.getContext('2d'));
-  context.font = '1px monospace';  // only used by Mac/Android for now, invalid for Windows
+  context.font = `${canvasFontSize}px monospace`;
   const expectedWidth = context.measureText('\u{1f602}').width;  // fixed width of emoji
 
   return function fixedWidthMeasure(s) {
     const width = context.measureText(s).width;
+    console.info('got width', width, s);
     return width / expectedWidth;
   }
 }());
@@ -96,15 +106,15 @@ export const isSingleValidEmoji = (function() {
 
   return function isSingleValidEmoji(s) {
     measurer.textContent = s;
-    const rect = measurer.getBoundingClientRect();
+    const rect = measure();
 
     const len = Math.round(rect.width / (letterSpacing + fontSize));
     if (len !== 1) {
       return false;  // expected single char
-    } else if (useInvalidHeight && validEmojiSize.h !== rect.height) {
+    } else if (useInvalidHeight && validEmojiSize.height !== rect.height) {
       return false;  // invalid height is useful, and we're not equal
     }
-    return invalidBoxSize.w !== rect.width - letterSpacing;
+    return invalidBoxSize.width !== rect.width - letterSpacing;
   }
 }());
 
@@ -163,20 +173,3 @@ export const isExpectedLength = (function() {
     return true;
   };
 }());
-
-/**
- * @param {string} platform from navigator.platform
- * @return {string} the fonts to use inside a font-family CSS declaration
- */
-function fontsFor(platform) {
-  const prefix = platform.substr(0, 3).toLowerCase();
-  switch (prefix) {
-  case 'win':
-    // Windows needs specified fonts (and Courier New, as monospace doesn't work?)
-    return `'Segoe UI Emoji', 'Segoe UI Symbol', 'Courier New', monospace`;
-  case 'mac':
-    return `'Helvetica Neue', 'Helvetica', monospace`;
-  default:
-    return `monospace`;
-  }
-}
