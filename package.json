@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0"
+  },
+  "name": "is-emoji",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": "git@github.com:samthor/is-emoji.git",
+  "author": "Sam Thorogood <sam.thorogood@gmail.com>",
+  "license": "Apache-2.0"
+}
