@@ -1,7 +1,7 @@
 
 import {emojiPointCount, iterateEmoji, isFlagPoint} from './emoji.js';
 
-// are we on a platform where emoji are all 1.0 width?
+// are we on a platform where emoji are all fixed width? This enables our fast-path.
 const fixedWidthEmoji =
     Boolean(/Mac|iP(hone|od|ad)/.exec(navigator.platform)) ||  // Mac and iOS
     Boolean(/Android/.exec(navigator.userAgent))           ||  // Android
@@ -33,7 +33,7 @@ function measure() {
   // use the height of the hider, as it grows to expand 'large' chars (the measurer itself doesn't)
   // grow, it just renders 'outside'
   const box = hider.getBoundingClientRect();
-  return {width: measurer.offetWidth, height: hider.offsetHeight};
+  return {width: measurer.offsetWidth, height: hider.offsetHeight};
 }
 
 // render a char that will show up as an invalid Unicode square box
@@ -45,16 +45,11 @@ measurer.textContent = '\u{1f602}';
 const validEmojiSize = measure();
 
 // check invalid vs emoji
-const useInvalidHeight = (validEmojiSize.height !== invalidBoxSize.height);
-export const isSingleAmbig = !useInvalidHeight && !fixedWidthEmoji;
+export const isSingleAmbig = (validEmojiSize.height === invalidBoxSize.height) && !fixedWidthEmoji;
 if (isSingleAmbig) {
   // This is somewhat unlikely, but possible. In this case, we can't tell single characters from
   // emoji, because everything has the same height.
-  console.warn(`unable to tell single char from emoji char`);
-} else {
-  // If we have to use this (because we're variable-width), it's still possible that certain
-  // Unicode characters will be detected as emoji, because they have the same height— e.g.,
-  // certain Japanese characters.
+  // console.warn(`unable to tell single char from emoji char`);
 }
 // _now_ set letterSpacing for rest
 measurer.style.letterSpacing = `${letterSpacing}px`;
@@ -79,7 +74,6 @@ const fixedWidthMeasure = (function() {
 
   return function fixedWidthMeasure(s) {
     const width = context.measureText(s).width;
-    console.info('got width', width, s);
     return width / expectedWidth;
   }
 }());
@@ -111,8 +105,10 @@ export const isSingleValidEmoji = (function() {
     const len = Math.round(rect.width / (letterSpacing + fontSize));
     if (len !== 1) {
       return false;  // expected single char
-    } else if (useInvalidHeight && validEmojiSize.height !== rect.height) {
-      return false;  // invalid height is useful, and we're not equal
+    } else if (validEmojiSize.height !== rect.height) {
+      // nb. This isn't perfect, it's very plausible that there are some random Unicode points
+      // that on the user's system which have the same height as the emoji itself.
+      return false;  // not emoji height
     }
     return invalidBoxSize.width !== rect.width - letterSpacing;
   }
@@ -135,8 +131,15 @@ export const isExpectedLength = (function() {
   }
 
   // isExpectedLength implementation for variable width environments (anywhere but Apple or
-  // Android). Windows, Linux and others render emoji with variable width.
+  // Android). Windows, Linux and others render emoji with variable width. But all platforms render
+  // emoji with fixed height.
+  // TODO: If we're wrong then remove the height checks.
   return function isExpectedLength(s) {
+    measurer.textContent = s;
+    if (hider.offsetHeight !== validEmojiSize.height) {
+      return false;  // early out, text doesn't have emoji height
+    }
+
     const expected = emojiPointCount(s);
     const renderPoints = countRenderPoints(s);
     if (renderPoints > expected) {
