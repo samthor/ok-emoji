@@ -2,7 +2,11 @@
 import {emojiPointCount, iterateEmoji, isFlagPoint} from './emoji.js';
 
 // are we on a platform where emoji are all 1.0 width?
-const fixedWidthEmoji = Boolean(/Mac|Android|iP(hone|od|ad)/.exec(navigator.platform));
+const debugFixed = false;
+const fixedWidthEmoji = debugFixed ||
+    Boolean(/Mac|iP(hone|od|ad)/.exec(navigator.platform)) ||  // Mac and iOS
+    Boolean(/Android/.exec(navigator.userAgent))           ||  // Android
+    false;
 
 const letterSpacing = 1024;  // must be sensibly large enough so we round over emoji
 const fontSize = 12;
@@ -11,12 +15,13 @@ const hider = document.createElement('div');
 hider.style.overflow = 'hidden';
 hider.style.width = '0px';
 hider.style.position = 'absolute';
+hider.setAttribute('href', 'https://github.com/samthor/is-emoji');
 
 const measurer = document.createElement('div');
 measurer.style.display = 'inline-block';
 measurer.style.whiteSpace = 'nowrap';
 measurer.style.fontSize = `${fontSize}px`;
-measurer.setAttribute('data-info', 'https://github.com/samthor/is-emoji');
+measurer.style.lineHeight = 'normal';
 measurer.style.fontFamily = fontsFor(navigator.platform);
 
 hider.appendChild(measurer);
@@ -38,8 +43,36 @@ const invalidBoxSize = cloneSize(measurer.getBoundingClientRect());
 measurer.textContent = '\u{1f602}';
 const validEmojiSize = cloneSize(measurer.getBoundingClientRect());
 
+// check invalid vs emoji
+const useInvalidHeight = (validEmojiSize.height !== invalidBoxSize);
+export const isSingleAmbig = !useInvalidHeight && !fixedWidthEmoji;
+if (isSingleAmbig) {
+  // FIXME(samthor): This could be the case on Windows or Linux, depending on their font rendering.
+  // We can't tell isSingleValidEmoji here: only "is single point".
+  console.warn(`unable to tell single char from emoji char`);
+}
+
 // _now_ set letterSpacing for rest
 measurer.style.letterSpacing = `${letterSpacing}px`;
+
+/**
+ * @type {(null|function(string): number)}
+ */
+const fixedWidthMeasure = (function() {
+  if (!fixedWidthEmoji) {
+    return null;
+  }
+
+  const canvas = /** @type {!HTMLCanvasElement} */ (document.createElement('canvas'));
+  const context = /** @type {!CanvasRenderingContext2D} */ (canvas.getContext('2d'));
+  context.font = '1px monospace';  // only used by Mac/Android for now, invalid for Windows
+  const expectedWidth = context.measureText('\u{1f602}').width;  // fixed width of emoji
+
+  return function fixedWidthMeasure(s) {
+    const width = context.measureText(s).width;
+    return width / expectedWidth;
+  }
+}());
 
 /**
  * @param {string} s to measure
@@ -50,42 +83,40 @@ export function countRenderPoints(s) {
   return Math.round(measurer.offsetWidth / (letterSpacing + fontSize));
 }
 
-export function testHackMeasure(s) {
-  measurer.textContent = s;
-  const rect = measurer.getBoundingClientRect();
-  return {width: rect.width, height: rect.height};
-}
-
 /**
  * @param {string} s
- * @return {boolean} whether this is a single valid point (width is single, and not an invalid box)
+ * @return {boolean} whether this is a single valid emoji (width is single, and not an invalid box)
  */
-export function isSingleValidPoint(s) {
-  measurer.textContent = s;
-  const {width, height} = measurer.getBoundingClientRect();
-
-  const len = Math.round(width / (letterSpacing + fontSize));
-  if (len !== 1) {
-    return false;  // expected single char
+export const isSingleValidEmoji = (function() {
+  if (fixedWidthEmoji) {
+    return function isSingleValidEmoji(s) {
+      return fixedWidthMeasure(s) === 1;
+    };
   }
-  return invalidBoxSize.h !== height && invalidBoxSize.w !== width - letterSpacing;
-}
+
+  return function isSingleValidEmoji(s) {
+    measurer.textContent = s;
+    const rect = measurer.getBoundingClientRect();
+
+    const len = Math.round(rect.width / (letterSpacing + fontSize));
+    if (len !== 1) {
+      return false;  // expected single char
+    } else if (useInvalidHeight && validEmojiSize.h !== rect.height) {
+      return false;  // invalid height is useful, and we're not equal
+    }
+    return invalidBoxSize.w !== rect.width - letterSpacing;
+  }
+}());
 
 /**
  * @param {string} s
  * @return {boolean} whether this is the expected length of an emoji-only string
  */
 export const isExpectedLength = (function() {
-  if (false && fixedWidthEmoji) {
-    const canvas = /** @type {!HTMLCanvasElement} */ (document.createElement('canvas'));
-    const context = /** @type {!CanvasRenderingContext2D} */ (canvas.getContext('2d'));
-    context.font = '1px monospace';  // only used by Mac/Android for now, invalid for Windows
-    const expectedWidth = context.measureText('\u{1f602}').width;  // fixed width of emoji
-
+  if (fixedWidthEmoji) {
     return function isExpectedLength(s) {
+      const actual = fixedWidthMeasure(s);
       const expected = emojiPointCount(s);
-      const width = context.measureText(s).width;
-      const actual = width / expectedWidth;
       if (~~actual !== actual) {
         return false;  // must be whole emoji chars
       }
@@ -110,13 +141,12 @@ export const isExpectedLength = (function() {
 
       // special-case flags, which we get in bulk
       if (isFlagPoint(part[0])) {
-        console.debug('checking flag', String.fromCodePoint(...part));
         if (part.length % 2) {
           return false;  // flags must be pairs
         }
         for (let i = 0; i < part.length; i += 2) {
           const text = String.fromCodePoint(part[i], part[i+1]);
-          if (!isSingleValidPoint(text)) {
+          if (!isSingleValidEmoji(text)) {
             return false;
           }
         }
@@ -125,8 +155,7 @@ export const isExpectedLength = (function() {
 
       // check is single char
       const text = String.fromCodePoint(...part);
-      console.debug('checking', text);
-      if (!isSingleValidPoint(text)) {
+      if (!isSingleValidEmoji(text)) {
         return false;
       }
     }
@@ -148,6 +177,6 @@ function fontsFor(platform) {
   case 'mac':
     return `'Helvetica Neue', 'Helvetica', monospace`;
   default:
-    return `'Arial', monospace`;
+    return `monospace`;
   }
 }
