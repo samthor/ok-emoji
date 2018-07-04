@@ -44,7 +44,7 @@ measurer.textContent = '\u{1f602}';
 const validEmojiSize = cloneSize(measurer.getBoundingClientRect());
 
 // check invalid vs emoji
-const useInvalidHeight = (validEmojiSize.height !== invalidBoxSize);
+const useInvalidHeight = (validEmojiSize.h !== invalidBoxSize.h);
 export const isSingleAmbig = !useInvalidHeight && !fixedWidthEmoji;
 if (isSingleAmbig) {
   // FIXME(samthor): This could be the case on Windows or Linux, depending on their font rendering.
