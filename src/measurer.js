@@ -1,11 +1,16 @@
 
-import {emojiPointCount, iterateEmoji, isFlagPoint} from './emoji.js';
+import {emojiPointCount, _emojiPointCount, _iterateEmoji, isFlagPoint} from './emoji.js';
+import {jsdecode} from './string.js';
 
 // are we on a platform where emoji are all fixed width? This enables our fast-path.
 const fixedWidthEmoji =
     Boolean(/Mac|iP(hone|od|ad)/.exec(navigator.platform)) ||  // Mac and iOS
     Boolean(/Android/.exec(navigator.userAgent))           ||  // Android
     false;
+
+// on Windows, the initial Man or Woman of an emoji sequence gets a space after it
+// ...well, Edge struggles with couples/family, Chrome is _just_ couples
+const initialManWomanHack = Boolean(/Win/.exec(navigator.platform));
 
 const letterSpacing = 1024;  // must be sensibly large enough so we round over emoji
 const fontSize = 100;        // large enough to unambiguate other wide chars
@@ -130,6 +135,13 @@ export const isExpectedLength = (function() {
     };
   }
 
+  const offsetManWomanHack = (function() {
+    if (initialManWomanHack) {
+      return (p) => (p === 0x1f468 || p === 0x1f469 ? 1 : 0);
+    }
+    return () => 0;
+  }());
+
   // isExpectedLength implementation for variable width environments (anywhere but Apple or
   // Android). Windows, Linux and others render emoji with variable width. But all platforms render
   // emoji with fixed height.
@@ -140,14 +152,15 @@ export const isExpectedLength = (function() {
       return false;  // early out, text doesn't have emoji height
     }
 
-    const expected = emojiPointCount(s);
+    const points = jsdecode(s);
+    const expected = _emojiPointCount(points) + offsetManWomanHack(points[0]);
     const renderPoints = countRenderPoints(s);
     if (renderPoints > expected) {
       return false;  // early out, catches uncombinables
     }
 
     // iterate through emoji parts, check all of them for validity
-    for (const part of iterateEmoji(s)) {
+    for (const part of _iterateEmoji(points)) {
       if (part === null) {
         return false;  // got invalid part
       }

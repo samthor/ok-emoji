@@ -54,7 +54,14 @@ const skippable = [runeVS16, runeCap, runeTagCancel];
  */
 export function emojiPointCount(s) {
   const points = jsdecode(s);
+  return _emojiPointCount(points);
+}
 
+/**
+ * @param {!Array<number>} points
+ * @return {number} count
+ */
+export function _emojiPointCount(points) {
   let halfCount = 0;
   const l = points.length;
   for (let i = 0; i < l; ++i) {
@@ -81,11 +88,18 @@ export function emojiPointCount(s) {
 
 /**
  * @param {string} s
- * @yields {?Array<number>}
+ * @yield {?Array<number>}
  */
 export function *iterateEmoji(s) {
   const points = jsdecode(s);
+  yield *_iterateEmoji(points);
+}
 
+/**
+ * @param {!Array<number>} points
+ * @yield {?Array<number>}
+ */
+export function *_iterateEmoji(points) {
   let curr = {flag: false, v: []};
   const pending = [curr];
 
