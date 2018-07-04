@@ -10,7 +10,7 @@ const fixedWidthEmoji =
 
 // on Windows, the initial Man or Woman of an emoji sequence gets a space after it
 // ...well, Edge struggles with couples/family, Chrome is _just_ couples
-const initialManWomanHack = Boolean(/Win/.exec(navigator.platform));
+const needsManWomanHack = Boolean(/Win/.exec(navigator.platform));
 
 const letterSpacing = 1024;  // must be sensibly large enough so we round over emoji
 const fontSize = 100;        // large enough to unambiguate other wide chars
@@ -93,6 +93,32 @@ export function countRenderPoints(s) {
 }
 
 /**
+ * @param {string} s to examine
+ * @return {number} the number of extra rendered chars to allow
+ */
+const countExtraAllowed = (function() {
+  if (!needsManWomanHack) {
+    return () => 0;
+  }
+
+  return (s) => {
+    let extra = 0;
+    let index = -1;
+    for (;;) {
+      index = s.indexOf('\u{200d}\u{d83d}', index+1);  // ZWJ plus first byte of person (man/woman)
+      if (index === -1) {
+        break;
+      }
+      const cand = s.charCodeAt(index+2);
+      if (cand === 56424 || cand === 56425) {
+        ++extra;
+      }
+    }
+    return extra;
+  }
+}());
+
+/**
  * @param {string} s
  * @return {boolean} whether this is a single valid emoji (width is single, and not an invalid box)
  */
@@ -107,8 +133,9 @@ export const isSingleValidEmoji = (function() {
     measurer.textContent = s;
     const rect = measure();
 
+    const expected = 1 + countExtraAllowed(s);
     const len = Math.round(rect.width / (letterSpacing + fontSize));
-    if (len !== 1) {
+    if (len > expected) {
       return false;  // expected single char
     } else if (validEmojiSize.height !== rect.height) {
       // nb. This isn't perfect, it's very plausible that there are some random Unicode points
@@ -135,13 +162,6 @@ export const isExpectedLength = (function() {
     };
   }
 
-  const offsetManWomanHack = (function() {
-    if (initialManWomanHack) {
-      return (p) => (p === 0x1f468 || p === 0x1f469 ? 1 : 0);
-    }
-    return () => 0;
-  }());
-
   // isExpectedLength implementation for variable width environments (anywhere but Apple or
   // Android). Windows, Linux and others render emoji with variable width. But all platforms render
   // emoji with fixed height.
@@ -153,7 +173,7 @@ export const isExpectedLength = (function() {
     }
 
     const points = jsdecode(s);
-    const expected = _emojiPointCount(points) + offsetManWomanHack(points[0]);
+    const expected = _emojiPointCount(points) + countExtraAllowed(s);
     const renderPoints = countRenderPoints(s);
     if (renderPoints > expected) {
       return false;  // early out, catches uncombinables
