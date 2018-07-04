@@ -1,12 +1,24 @@
 {
-  "dependencies": {
+  "name": "ok-emoji",
+  "version": "1.0.0",
+  "description": "Finds whether an emoji is supported in the browser",
+  "module": "index.js",
+  "jsnext:main": "index.js",
+  "devDependencies": {
     "chai": "^4.1.2",
     "mocha": "^5.2.0"
   },
-  "name": "is-emoji",
-  "version": "0.0.1",
-  "main": "index.js",
-  "repository": "git@github.com:samthor/is-emoji.git",
-  "author": "Sam Thorogood <sam.thorogood@gmail.com>",
-  "license": "Apache-2.0"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samthor/ok-emoji.git"
+  },
+  "keywords": [
+    "emoji"
+  ],
+  "author": "Sam Thorogood <sam.thorogood@mgail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/samthor/ok-emoji/issues"
+  },
+  "homepage": "https://github.com/samthor/ok-emoji#readme"
 }

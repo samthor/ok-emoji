@@ -1,7 +1,9 @@
 <script type="module">
 
 import {emojiPointCount} from './src/emoji.js';
-import {countRenderPoints, isSingleValidEmoji, isExpectedLength, isSingleAmbig} from './src/measurer.js';
+import {countRenderPoints, isSingleValidEmoji, isSingleAmbig} from './src/measurer.js';
+
+import isExpectedLength from './index.js';  // use default import
 
 ambig.textContent = `ambig=${isSingleAmbig}`;
 
