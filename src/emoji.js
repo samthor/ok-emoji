@@ -105,7 +105,7 @@ export function *_iterateEmoji(points) {
 
   const ensure = (flag) => {
     if (curr.flag !== flag) {
-      curr = {flag: Boolean(flag), v: []};
+      curr = {flag, v: []};
       pending.push(curr);
     }
   };
