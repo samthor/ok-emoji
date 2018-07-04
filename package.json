@@ -1,6 +1,6 @@
 {
   "name": "ok-emoji",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Finds whether an emoji is supported in the browser",
   "module": "index.js",
   "jsnext:main": "index.js",
