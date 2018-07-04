@@ -38,6 +38,9 @@ const skippable = [runeVS16, runeCap, runeTagCancel];
 /**
  * Returns a count of the expected number of points displayed for the given valid emoji string.
  *
+ * Assumes the emoji is normalized/well-formed: if not, the result will likely just be lower than
+ * rendered, and it'll be considered invalid anyway.
+ *
  * @param {string} s
  * @return {number} count
  */
