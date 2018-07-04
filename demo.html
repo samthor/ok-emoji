@@ -1,0 +1,21 @@
+<script type="module">
+
+import {emojiPointCount} from './src/emoji.js';
+import {countRenderPoints, isSingleValidPoint, isExpectedLength} from './src/measurer.js';
+
+text.oninput = () => {
+  const r = text.value;
+  const v = `count: ${emojiPointCount(r)}
+render: ${countRenderPoints(r)}
+valid: ${isSingleValidPoint(r)}
+expected: ${isExpectedLength(r)}`;
+  out.textContent = v;
+};
+
+text.value = '➡️';
+text.oninput();
+
+</script>
+
+<input type="text" id="text" />
+<pre id="out"></pre>

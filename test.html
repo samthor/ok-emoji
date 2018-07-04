@@ -1,27 +1,32 @@
-<script type="module">
+<!DOCTYPE html>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="node_modules/mocha/mocha.css" />
+<script src="node_modules/mocha/mocha.js"></script>
+<script src="node_modules/chai/chai.js"></script>
+<script>
 
-import {emojiPointCount} from './src/emoji.js';
-import {countRenderPoints, isSingleValidPoint, isExpectedLength} from './src/measurer.js';
+var assert = chai.assert;
+mocha.setup({ ui: 'tdd' });
 
-import {testHackMeasure} from './src/measurer.js';
+(function() {
+  var pageError = null;
 
-text.oninput = () => {
-  const r = text.value;
+  window.addEventListener('error', function(event) {
+    pageError = event.filename + ':' + event.lineno + ' ' + event.message;
+  });
 
-  const box = testHackMeasure(r);
-
-  const v = `count: ${emojiPointCount(r)}
-render: ${countRenderPoints(r)}
-valid: ${isSingleValidPoint(r)}
-expected: ${isExpectedLength(r)}
-dim: ${box.width}x${box.height}`;
-  out.textContent = v;
-};
-
-text.value = '➡️';
-text.oninput();
+  window.addEventListener('load', function() {
+    if (pageError) {
+      suite('page-script-errors', function() {
+        test('no script errors on page', function() {
+          assert.fail(null, null, pageError);
+        });
+      });
+    }
+    mocha.run();
+  });
+})();
 
 </script>
-
-<input type="text" id="text" />
-<pre id="out"></pre>
+<div id="mocha"></div>
+<script src="suite.js" type="module"></script>
