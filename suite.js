@@ -41,4 +41,10 @@ suite('measurer', () => {
   test('single valid shouldn\'t work on chars', () => {
     assert.isFalse(isSingleValidEmoji('a'), 'single char should not be emoji');
   });
+
+  test('expected length', () => {
+    assert.isTrue(isExpectedLength('\u{1f602}\u{1f602}'), 'double face should be expected');
+    assert.isTrue(isExpectedLength('\u{1f468}\u{200d}\u{1f469}\u{200d}\u{1f466}'), 'family should be expected');
+    assert.isFalse(isExpectedLength('x\u{1f468}\u{200d}\u{1f469}\u{200d}\u{1f466}'), 'ascii should fail');
+  });
 });
