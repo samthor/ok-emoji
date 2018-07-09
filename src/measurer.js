@@ -19,7 +19,7 @@ const hider = document.createElement('div');
 hider.style.overflow = 'hidden';
 hider.style.width = '0px';
 hider.style.position = 'absolute';
-hider.setAttribute('href', 'https://github.com/samthor/is-emoji');
+hider.setAttribute('href', 'https://github.com/samthor/ok-emoji');
 
 const measurer = document.createElement('div');
 measurer.style.display = 'inline-block';
