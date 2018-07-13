@@ -144,3 +144,36 @@ export function *_iterateEmoji(points) {
     yield tail.v;
   }
 }
+
+/**
+ * Stringifies the given emoji char. By default, generates e.g. "1f575_fe0f_200d_2642" or "23_20e3".
+ *
+ * @param {string} s
+ * @param {{sep: string, pad: number, lower: boolean, unqualify: boolean}=} opts
+ * @return {string}
+ */
+export function stringify(s, opts={}) {
+  const points = jsdecode(s);
+  return _stringify(points, opts);
+}
+
+/**
+ * @param {!Array<number>} points
+ * @param {{sep: string, pad: number, lower: boolean, unqualify: boolean}=} opts
+ * @return {string}
+ */
+export function _stringify(points, opts = {}) {
+  const def = {sep: '_', pad: 0, lower: true, unqualify: true};
+  const {sep, pad, lower, unqualify} = Object.assign(def, opts);
+  if (unqualify) {
+    points = points.filter((part) => part !== runeVS16);
+  }
+  const parts = points.map((point) => {
+    let part = point.toString(16);
+    if (!lower) {
+      part = part.toUpperCase();
+    }
+    return '0'.repeat(Math.max(0, pad - part.length)) + part;
+  });
+  return parts.join(sep);
+}

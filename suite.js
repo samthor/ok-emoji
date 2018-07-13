@@ -1,5 +1,5 @@
 
-import {emojiPointCount, iterateEmoji} from './src/emoji.js';
+import {emojiPointCount, iterateEmoji, stringify} from './src/emoji.js';
 import {countRenderPoints, isSingleValidEmoji, isExpectedLength} from './src/measurer.js';
 
 suite('emoji', () => {
@@ -23,6 +23,15 @@ suite('emoji', () => {
     assert.deepEqual(all('\u{0023}\u{fe0f}\u{20e3}\u{1f602}'),
         [[0x0023, 0xfe0f, 0x20e3], [0x1f602]]);
     assert.deepEqual(all('\u{1f1e6}\u{1f1e6}\u{1f1e6}'), [[0x1f1e6, 0x1f1e6, 0x1f1e6]]);
+  });
+
+  test('stringify', () => {
+    const d = '\u{1f575}\u{fe0f}\u{200d}\u{2642}\u{fe0f}';
+    assert.equal(stringify(d), '1f575_200d_2642');
+    assert.equal(stringify(d, {pad: 5}), '1f575_0200d_02642');
+    assert.equal(stringify(d, {pad: 6, sep: '-', lower: false}), '01F575-00200D-002642');
+    assert.equal(stringify(d, {unqualify: false}), '1f575_fe0f_200d_2642_fe0f');
+    assert.equal(stringify('\u{fe0f}'), '');
   });
 });
 
