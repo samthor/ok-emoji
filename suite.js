@@ -48,7 +48,11 @@ suite('measurer', () => {
   });
   
   test('single valid shouldn\'t work on chars', () => {
-    assert.isFalse(isSingleValidEmoji('a'), 'single char should not be emoji');
+    assert.isFalse(isSingleValidEmoji('a'), 'single ascii char should not be emoji');
+  });
+
+  test('single valid shouldn\'t work on complex chars', () => {
+    assert.isFalse(isSingleValidEmoji('\u{9910}'), 'single chinese char should not be emoji');
   });
 
   test('expected length', () => {

@@ -26,7 +26,7 @@ measurer.style.display = 'inline-block';
 measurer.style.whiteSpace = 'nowrap';
 measurer.style.fontSize = `${fontSize}px`;
 measurer.style.lineHeight = 'normal';
-measurer.style.fontFamily = 'sans-serif';
+measurer.style.fontFamily = 'monospace, emoji';
 
 hider.appendChild(measurer);
 document.body.appendChild(hider);
