@@ -245,9 +245,9 @@ mkdirp@0.5.1:
   dependencies:
     minimist "0.0.8"
 
-mocha-headless-server@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/mocha-headless-server/-/mocha-headless-server-0.1.0.tgz#7b2e357ea03e145dac08f63021f4a13f4b016499"
+mocha-headless-server@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/mocha-headless-server/-/mocha-headless-server-0.1.1.tgz#b8d5bd06a98c0a995b45441294016e0dd37df150"
   dependencies:
     puppeteer "^1.6.0"
     serve-handler "^3.3.0"
