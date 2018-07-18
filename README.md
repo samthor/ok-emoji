@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/samthor/ok-emoji.svg?branch=master)](https://travis-ci.org/samthor/ok-emoji)
+
 Finds whether an emoji is supported in the browser.
 This package doesn't contain or know the [canonical list of emoji](https://www.unicode.org/Public/emoji/11.0/emoji-test.txt): it uses the browser to measure whether emoji render properly.
 
