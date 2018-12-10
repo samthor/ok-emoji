@@ -70,7 +70,7 @@ export function _emojiPointCount(points) {
       halfCount -= 2;
     } else if (skippable.indexOf(p) !== -1 || isTag(p) || isSkinTone(p)) {
       // do nothing
-    } else if (isFlagPoint(p)) {
+    } else if (isFlagPoint(p) && points[i+1] !== runeVS16) {
       ++halfCount;
     } else {
       halfCount += 2;
@@ -114,7 +114,7 @@ export function *_iterateEmoji(points) {
   for (let i = 0; i < l; ++i) {
     const p = points[i];
 
-    if (isFlagPoint(p)) {
+    if (isFlagPoint(p) && points[i+1] !== runeVS16) {
       ensure(true);  // force flag mode
       curr.v.push(p);
     } else if (skippable.indexOf(p) !== -1 || isTag(p) || isSkinTone(p) || p === runeZWJ) {

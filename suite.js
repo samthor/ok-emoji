@@ -56,4 +56,9 @@ suite('measurer', () => {
     assert.isTrue(isExpectedLength('\u{1f468}\u{200d}\u{1f469}\u{200d}\u{1f466}'), 'family should be expected');
     assert.isFalse(isExpectedLength('x\u{1f468}\u{200d}\u{1f469}\u{200d}\u{1f466}'), 'ascii should fail');
   });
+
+  test('flags', () => {
+    assert.isTrue(isExpectedLength('\u{1f1e6}\u{fe0f}\u{1f1e6}\u{fe0f}\u{1f1e6}\u{fe0f}'), 'three regional letters with VS16 valid');
+    assert.isFalse(isExpectedLength('\u{1f1e6}\u{1f1e6}\u{1f1e6}'), 'three regional letters not valid');
+  });
 });

@@ -1,5 +1,5 @@
 
-import {emojiPointCount, _emojiPointCount, _iterateEmoji, isFlagPoint} from './emoji.js';
+import {emojiPointCount, _emojiPointCount, _iterateEmoji, isFlagPoint, runeVS16} from './emoji.js';
 import {jsdecode} from './string.js';
 
 // are we on a platform where emoji are all fixed width? This enables our fast-path.
@@ -187,7 +187,9 @@ export const isExpectedLength = (function() {
 
       // special-case flags, which we get in bulk
       if (isFlagPoint(part[0])) {
-        if (part.length % 2) {
+        if (part[1] === runeVS16) {
+          continue;
+        } else if (part.length % 2) {
           return false;  // flags must be pairs
         }
         for (let i = 0; i < part.length; i += 2) {
