@@ -1,18 +1,25 @@
 <script type="module">
 
-import {emojiPointCount} from './src/emoji.js';
-import {countRenderPoints, isSingleValidEmoji, isSingleAmbig} from './src/measurer.js';
+import * as encoding from './src/encoding.js';
+import {singleBase} from './src/variants.js';
 
-import isExpectedLength from './index.js';  // use default import
+// import {emojiPointCount} from './src/emoji.js';
+// import {countRenderPoints, isSingleValidEmoji, isSingleAmbig} from './src/measurer.js';
 
-ambig.textContent = `ambig=${isSingleAmbig}`;
+// import isExpectedLength from './index.js';  // use default import
+
+// ambig.textContent = `ambig=${isSingleAmbig}`;
 
 text.oninput = () => {
   const r = text.value;
-  const v = `count: ${emojiPointCount(r)}
-render: ${countRenderPoints(r)}
-valid: ${isSingleValidEmoji(r)}
-expected: ${isExpectedLength(r)}`;
+  if (!r) {
+    out.textContent = '';
+    return;
+  }
+  const enc = encoding.split(r)[0];
+
+  const base = singleBase(enc);
+  const v = `base: ${encoding.single(base)}`;
   out.textContent = v;
 };
 
@@ -23,4 +30,3 @@ text.oninput();
 
 <input type="text" id="text" />
 <pre id="out"></pre>
-<pre id="ambig"></pre>
