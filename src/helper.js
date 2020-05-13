@@ -12,6 +12,12 @@ export const runePersonWoman = 0x1f468;
 export const runePersonMan = 0x1f469;
 export const runePerson = 0x1f9d1;
 
+export const runeHandshake = 0x1f91d;
+export const runeHeart = 0x2764;
+export const runeKiss = 0x1f48b;
+export const runeHolidayTree = 0x1f384;
+export const runeNuclearFamily = 0x1f46a;
+
 export function isFlagPoint(r) {
   return r >= runeFlagA && r <= 0x1f1ff;
 }

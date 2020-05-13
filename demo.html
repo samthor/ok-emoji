@@ -1,7 +1,7 @@
 <script type="module">
 
 import * as encoding from './src/encoding.js';
-import {singleBase} from './src/variants.js';
+import {singleBase, supportsTone} from './src/variants.js';
 
 // import {emojiPointCount} from './src/emoji.js';
 // import {countRenderPoints, isSingleValidEmoji, isSingleAmbig} from './src/measurer.js';
@@ -19,7 +19,8 @@ text.oninput = () => {
   const enc = encoding.split(r)[0];
 
   const base = singleBase(enc);
-  const v = `base: ${encoding.single(base)}`;
+  const v = `base: ${encoding.single(base)}
+tone: ${supportsTone(base)}`;
   out.textContent = v;
 };
 

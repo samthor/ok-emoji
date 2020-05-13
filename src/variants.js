@@ -4,7 +4,6 @@ import {
   professions as professionsSource,
   roles as rolesSource,
 } from './raw/defs.js';
-import {extraGenderList} from './raw/gender.js';
 import * as helper from './helper.js';
 import {expando, deexpando} from './expando.js';
 import {jsdecode} from './string.js';
@@ -15,13 +14,15 @@ jsdecode(modifierBaseSource).forEach((b) => modifierBase.add(b));
 const roles = new Set();
 jsdecode(rolesSource).forEach((role) => roles.add(role));
 
+const extraBasesSource = [
+  0x1f9d2, 0x1f467, 0x1f466,  // child, girl, boy
+  0x1f9d3, 0x1f475, 0x1f474,  // old {adult,woman,man}
+];
 const extraBases = new Map();
-for (let i = 0; i < extraGenderList.length; i += 3) {
-  const neutral = extraGenderList[i+2];
-  if (neutral !== 0) {
-    extraBases.set(extraGenderList[i+0], neutral);
-    extraBases.set(extraGenderList[i+1], neutral);
-  }
+for (let i = 0; i < extraBasesSource.length; i += 3) {
+  const neutral = extraBasesSource[i];
+  extraBases.set(extraBasesSource[i+1], neutral);
+  extraBases.set(extraBasesSource[i+2], neutral);
 }
 
 /**
@@ -51,38 +52,58 @@ function isPersonGroup(p) {
 }
 
 /**
- * Strips all gender, skin tone etc from the passed emoji and reduce it to its simplest common
- * ancestor.
+ * Returns the base emoji for the given single emoji. This assumes input is already expando'ed.
  *
- * This won't apply to emoji without ancestors: e.g., Santa Claus and Mrs Claus.
+ * @param {!Array<number>} points already expando'ed points
+ * @return {!Array<number>}
+ */
+function internalSingleBase(points) {
+  if (isFamilyPoints(points)) {
+    return [helper.runeNuclearFamily];  // generic nuclear family
+  }
+  return points = points.map((point) => {
+    if (helper.isGenderPerson(point)) {
+      return helper.runePerson;
+    } else if (helper.isGender(point) || helper.isToneModifier(point)) {
+      return 0;
+    } else if (extraBases.has(point)) {
+      return extraBases.get(point);
+    } else {
+      return point;
+    }
+  }).filter((point) => point !== 0);
+}
+
+/**
+ * Strips all gender, skin tone etc from the passed single emoji and reduce it to its simplest
+ * common ancestor.
  *
  * @param {!Array<number>} points
  * @return {!Array<number>} simplified common emoji (neuter etc)
  */
 export function singleBase(points) {
-  points = points.filter((point) => !helper.isToneModifier(point));
-
-  if (isFamilyPoints(points)) {
-    return [0x1f46a];  // generic nuclear family
-  }
-
   const possibleExpando = expando(points) || helper.isGenderPerson(points[0]);
 
-  points = points.map((point) => {
-    if (helper.isGenderPerson(point)) {
-      return helper.runePerson;
-    } else if (helper.isGender(point)) {
-      return 0;
-    }
-
-    const other = extraBases.get(point);
-    if (other !== undefined) {
-      return other;
-    }
-
-    return point;
-  }).filter((point) => point !== 0);
+  points = internalSingleBase(points);
 
   possibleExpando && deexpando(points);
   return points;
+}
+
+/**
+ * Does the passed emoji support skin tones?
+ *
+ * @param {!Array<number>} points
+ * @return {boolean}
+ */
+export function supportsTone(points) {
+  if (!helper.isGenderPerson(points[0])) {
+    return modifierBase.has(points[0]);
+  } else if (isPersonGroup(points)) {
+    // People are in the list of modifiers, but when used as a group, only "holding hands" supports
+    // skin tone modification.
+    // TODO(samthor): This actually supports _double_ modification.
+    return points.includes(helper.runeHandshake);
+  }
+  return !isFamilyPoints(points);
 }
