@@ -11,6 +11,13 @@ import {jsdecode} from './string.js';
 const modifierBase = new Set();
 jsdecode(modifierBaseSource).forEach((b) => modifierBase.add(b));
 
+// Remove both "kiss" and "couple with heart". The emoji test data (and vendor implementations) are
+// ambiguous as to whether this is supported.
+//  * These aren't expanded in "emoji-test.txt", but are listed in "emoji-data.txt"
+//  * Only Microsoft supports the modifier, although macOS often eats the tone silently
+modifierBase.delete(0x1f48f);
+modifierBase.delete(0x1f491);
+
 const roles = new Set();
 jsdecode(rolesSource).forEach((role) => roles.add(role));
 
@@ -91,19 +98,32 @@ export function singleBase(points) {
 }
 
 /**
- * Does the passed emoji support skin tones?
+ * Does the passed single emoji support skin tones?
  *
  * @param {!Array<number>} points
  * @return {boolean}
  */
 export function supportsTone(points) {
   if (!helper.isGenderPerson(points[0])) {
+    // We don't expando this, as modifierBase also contains the top-level weird cases (including
+    // double "holding hands" cases).
     return modifierBase.has(points[0]);
   } else if (isPersonGroup(points)) {
     // People are in the list of modifiers, but when used as a group, only "holding hands" supports
-    // skin tone modification.
-    // TODO(samthor): This actually supports _double_ modification.
+    // skin tone modification (it's double, but caught below).
     return points.includes(helper.runeHandshake);
   }
   return !isFamilyPoints(points);
+}
+
+/**
+ * Does the passed single emoji support double application of skin tone?
+ *
+ * @param {!Array<number>} points
+ * @return {boolean}
+ */
+export function supportsDoubleTone(points) {
+  // look for non-expandoed holding hands cases plus real one
+  return (points[0] >= 0x1f46b && points[0] <= 0x1f46d) ||
+      (isPersonGroup(points) && points.includes(helper.runeHandshake));
 }

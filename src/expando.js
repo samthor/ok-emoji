@@ -68,7 +68,10 @@ export function expando(source) {
   if (tone !== 0) {
     // splice in skintone after first point and last point
     source.splice(1, 0, tone);
-    source.splice(source.length, 0, tone);
+    if (data.length > 2) {
+      // Claus family is just a single person
+      source.splice(source.length, 0, tone);
+    }
   }
   return source;
 }
