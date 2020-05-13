@@ -34,6 +34,35 @@ function buildSourceMap(raw) {
   return m;
 }
 
+/**
+ * @type {!Object<string, !Array<number>>} of family combinations
+ */
+const familyExpansion = (() => {
+  // Unlike other joined emoji, males go first in Family groups, but girls still come before boys.
+  const parents = ['mf', 'mm', 'ff', 'm', 'f']
+  const children = ['b', 'g', 'gb', 'bb', 'gg'];
+
+  const expand = {
+    'f': helper.runePersonWoman,
+    'm': helper.runePersonMan,
+    'b': 0x1f466,
+    'g': 0x1f467,
+  };
+
+  const all = {
+    'n': [helper.runeNuclearFamily],
+  };
+
+  parents.forEach((parent) => {
+    children.forEach((child) => {
+      const text = parent + child;
+      all[text] = Object.seal(Array.from(text).map((c) => expand[c]));
+    });
+  });
+
+  return Object.seal(all);
+})();
+
 // Describes bases which should be returned in singleBase().
 const extraBasesSource = [
   0x1f9d2, 0x1f467, 0x1f466,  // child, girl, boy
@@ -125,8 +154,7 @@ function internalGenderVariants(base) {
     const only = base[0];
 
     if (only === helper.runeNuclearFamily) {
-      // TODO: family expandos
-      return null;
+      return familyExpansion;
     }
 
     // This is a role, e.g., Construction Worker, that can stand alone (neuter) or have a female or
