@@ -4,9 +4,11 @@
 
 export const runeVS16 = 0xfe0f;
 export const runeZWJ = 0x200d;
+export const runeTagSpace = 0xe0020;
 export const runeTagCancel = 0xe007f;
 export const runeKeycap = 0x20e3;
 export const runeFlagA = 0x1f1e6;
+export const runeFlagZ = 0x1f1ff;
 
 export const runePersonWoman = 0x1f469;
 export const runePersonMan = 0x1f468;
@@ -22,7 +24,7 @@ export const runeHolidayTree = 0x1f384;
 export const runeNuclearFamily = 0x1f46a;
 
 export function isFlagPoint(r) {
-  return r >= runeFlagA && r <= 0x1f1ff;
+  return r >= runeFlagA && r <= runeFlagZ;
 }
 
 export function isFamilyMember(r) {
@@ -38,13 +40,13 @@ export function isHairEmoji(r) {
 }
 
 export function isGenderPerson(r) {
-	return r === 0x1f468 || r === 0x1f469 || r === 0x1f9d1;  // woman, man, person
+	return r === runePersonWoman || r === runePersonMan || r === runePerson;
 }
 
 export function isGender(r) {
-	return r === 0x2640 || r === 0x2642;  // woman, man
+	return r === runeGenderFemale || r === runeGenderMale;
 }
 
 export function isTagRune(r) {
-  return r >= 0xe0020 && r <= runeTagCancel;  // includes cancel
+  return r >= runeTagSpace && r <= runeTagCancel;
 }

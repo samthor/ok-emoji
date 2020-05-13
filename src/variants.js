@@ -157,6 +157,9 @@ function internalGenderVariants(base) {
       return familyExpansion;
     }
 
+    // TODO(samthor): We could pretty easily turn single profession indicators (e.g., "fire truck")
+    // into personified applications of those professions. It's not clear this is intuitive though.
+
     // This is a role, e.g., Construction Worker, that can stand alone (neuter) or have a female or
     // male modifier included.
     if (roles.has(only)) {
