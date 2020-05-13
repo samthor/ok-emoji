@@ -1,7 +1,16 @@
+<style>
+  canvas {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: pixelated;
+  }
+</style>
 <script type="module">
 
 import * as encoding from './src/encoding.js';
 import * as variants from './src/variants.js';
+import * as expando from './src/expando.js';
+
+import {supported} from './src/measure.js';
 
 // import {emojiPointCount} from './src/emoji.js';
 // import {countRenderPoints, isSingleValidEmoji, isSingleAmbig} from './src/measurer.js';
@@ -14,8 +23,15 @@ function renderVariants(object) {
   if (object === null) {
     return '';
   }
-  const enc = (key) => `${key} ${encoding.single(object[key])}`;
-  return Object.keys(object).map(enc).join(', ');
+  const enc = (key) => {
+    const v = object[key];
+    return `\n  ${key} ${encoding.single(v)} ${hex(v)} ${supported(encoding.single(v))}`;
+  };
+  return Object.keys(object).map(enc).join('');
+}
+
+function hex(all) {
+  return `[${all.map((x) => x.toString(16)).join(', ')}]`;
 }
 
 text.oninput = () => {
@@ -27,10 +43,20 @@ text.oninput = () => {
   const enc = encoding.split(r)[0];
 
   const base = variants.singleBase(enc);
-  const v = `base: ${encoding.single(base)}
+  const v = `base: ${encoding.single(base)} ${hex(base)}
 tone: ${variants.supportsTone(base) ? (variants.supportsDoubleTone(base) ? 'double' : 'yes') : 'no'}
-variants: ${renderVariants(variants.genderVariants(base))}`;
+variants: ${renderVariants(variants.genderVariants(base))}
+supported: ${supported(encoding.single(base))} (orig: ${supported(encoding.single(enc))})`;
   out.textContent = v;
+
+  const runs = 100;
+  const c = encoding.single(base);
+  console.time('checks');
+  for (let i = 0; i < runs; ++i) {
+    supported(c);
+  }
+  console.timeEnd('checks');
+  console.debug('runs', runs);
 };
 
 text.value = '➡️';
