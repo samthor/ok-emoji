@@ -10,6 +10,14 @@ import * as variants from './src/variants.js';
 
 // ambig.textContent = `ambig=${isSingleAmbig}`;
 
+function renderVariants(object) {
+  if (object === null) {
+    return '';
+  }
+  const enc = (key) => `${key} ${encoding.single(object[key])}`;
+  return Object.keys(object).map(enc).join(', ');
+}
+
 text.oninput = () => {
   const r = text.value;
   if (!r) {
@@ -20,7 +28,8 @@ text.oninput = () => {
 
   const base = variants.singleBase(enc);
   const v = `base: ${encoding.single(base)}
-tone: ${variants.supportsTone(base) ? (variants.supportsDoubleTone(base) ? 'double' : 'yes') : 'no'}`;
+tone: ${variants.supportsTone(base) ? (variants.supportsDoubleTone(base) ? 'double' : 'yes') : 'no'}
+variants: ${renderVariants(variants.genderVariants(base))}`;
   out.textContent = v;
 };
 

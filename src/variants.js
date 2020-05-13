@@ -21,16 +21,33 @@ modifierBase.delete(0x1f491);
 const roles = new Set();
 jsdecode(rolesSource).forEach((role) => roles.add(role));
 
+function buildSourceMap(raw) {
+  const m = new Map();
+  for (let i = 0; i < raw.length; i += 3) {
+    const data = raw.slice(i, i + 3);
+    if (raw[i+0] !== 0) {
+      m.set(raw[i+0], data);
+    }
+    m.set(raw[i+1], data);
+    m.set(raw[i+2], data);
+  }
+  return m;
+}
+
+// Describes bases which should be returned in singleBase().
 const extraBasesSource = [
   0x1f9d2, 0x1f467, 0x1f466,  // child, girl, boy
   0x1f9d3, 0x1f475, 0x1f474,  // old {adult,woman,man}
 ];
-const extraBases = new Map();
-for (let i = 0; i < extraBasesSource.length; i += 3) {
-  const neutral = extraBasesSource[i];
-  extraBases.set(extraBasesSource[i+1], neutral);
-  extraBases.set(extraBasesSource[i+2], neutral);
-}
+const extraBases = buildSourceMap(extraBasesSource);
+
+// Describes gender variants which have no clear neutral case, but which can be used as variants.
+// Includes the bases from above for convenience.
+const genderVariantSource = extraBasesSource.concat([
+  0, 0x1f483, 0x1f57a,  // dancers
+  0, 0x1f478, 0x1f934,  // princess, prince
+]);
+const genderVariant = buildSourceMap(genderVariantSource);
 
 /**
  * @param {!Array<number>} p points to check
@@ -74,7 +91,7 @@ function internalSingleBase(points) {
     } else if (helper.isGender(point) || helper.isToneModifier(point)) {
       return 0;
     } else if (extraBases.has(point)) {
-      return extraBases.get(point);
+      return extraBases.get(point)[0];  // neutral is first
     } else {
       return point;
     }
@@ -95,6 +112,112 @@ export function singleBase(points) {
 
   possibleExpando && deexpando(points);
   return points;
+}
+
+/**
+ * Returns gender variants for the passed emoji. Handles already expando'ed and based points.
+ *
+ * @param {!Array<number>} base
+ * @return {?Object<string, !Array<number>>} possible variants
+ */
+function internalGenderVariants(base) {
+  if (base.length === 1) {
+    const only = base[0];
+
+    if (only === helper.runeNuclearFamily) {
+      // TODO: family expandos
+      return null;
+    }
+
+    // This is a role, e.g., Construction Worker, that can stand alone (neuter) or have a female or
+    // male modifier included.
+    if (roles.has(only)) {
+      return {
+        'n': [only],
+        'f': [only, helper.runeGenderFemale],
+        'm': [only, helper.runeGenderMale],
+      };
+    }
+
+    // This is an emoji which has gender variants (including bases). The 'only' emoji here might
+    // already be gendered; we don't care, just get the shared result and return all cases.
+    if (genderVariant.has(only)) {
+      const [n, f, m] = genderVariant.get(only);
+      const out = {
+        'f': [f],
+        'm': [m],
+      };
+      if (n !== 0) {
+        out['n'] = [n];
+      }
+      return out;
+    }
+
+    // fall-through to person case (since there might be just one)
+  }
+
+  // All other variants should start with runePerson.
+  if (base[0] !== helper.runePerson) {
+    return null;
+  }
+
+  const peopleAt = [0];
+  for (let i = 1; i < base.length; ++i) {
+    if (base[i] === helper.runePerson) {
+      peopleAt.push(i);
+    }
+  }
+
+  if (peopleAt.length === 1) {
+    const f = base.slice();
+    f[0] = helper.runePersonWoman;
+    const m = base.slice();
+    m[0] = helper.runePersonMan;
+    return {
+      'n': base, f, m,
+    };
+  } else if (peopleAt.length === 2) {
+    const [a, b] = peopleAt;
+    const swapPair = (first, second) => {
+      const out = base.slice();
+      out[a] = first;
+      out[b] = second;
+      return out;
+    };
+    return {
+      'n': base,
+      'f': swapPair(helper.runePersonWoman, helper.runePersonWoman),
+      'm': swapPair(helper.runePersonMan, helper.runePersonMan),
+      'fm': swapPair(helper.runePersonWoman, helper.runePersonMan),
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Finds gender variants for the passed emoji, or null if there are none.
+ *
+ * The returned object contains keys related to the type of variant generated. Different emoji may
+ * cause different keys to appear.
+ *
+ * @param {!Array<number>} base
+ * @return {?Object<string, !Array<number>>} possible variants
+ */
+export function genderVariants(points) {
+  const possibleExpando = expando(points) || helper.isGenderPerson(points[0]);
+  const base = internalSingleBase(points);
+
+  const options = internalGenderVariants(base);
+  if (options === null) {
+    return null;
+  }
+
+  if (possibleExpando) {
+    Object.values(options).forEach(deexpando);
+  }
+
+  return options;
 }
 
 /**

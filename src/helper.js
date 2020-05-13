@@ -8,9 +8,12 @@ export const runeTagCancel = 0xe007f;
 export const runeKeycap = 0x20e3;
 export const runeFlagA = 0x1f1e6;
 
-export const runePersonWoman = 0x1f468;
-export const runePersonMan = 0x1f469;
+export const runePersonWoman = 0x1f469;
+export const runePersonMan = 0x1f468;
 export const runePerson = 0x1f9d1;
+
+export const runeGenderFemale = 0x2640;
+export const runeGenderMale = 0x2642;
 
 export const runeHandshake = 0x1f91d;
 export const runeHeart = 0x2764;
