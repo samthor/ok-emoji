@@ -114,7 +114,7 @@ function internalSingleBase(points) {
   if (isFamilyPoints(points)) {
     return [helper.runeNuclearFamily];  // generic nuclear family
   }
-  return points = points.map((point) => {
+  const out = points.map((point) => {
     if (helper.isGenderPerson(point)) {
       return helper.runePerson;
     } else if (helper.isGender(point) || helper.isToneModifier(point)) {
@@ -125,6 +125,14 @@ function internalSingleBase(points) {
       return point;
     }
   }).filter((point) => point !== 0);
+
+  if (!out.length && points.length) {
+    const first = points[0];
+    if (helper.isGender(first) || helper.isToneModifier(first)) {
+      return [first];
+    }
+  }
+  return out;
 }
 
 /**
