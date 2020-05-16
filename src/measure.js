@@ -21,20 +21,64 @@ function buildCanvas(width, height) {
 
 const w = 2;
 const h = 2;
+const fontFamily = `'Lato', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Helvetica Neue', 'Helvetica', sans-serif`;
+const fontSize = h + 0.5;
 
 // The exact position/size of the font used isn't perfect, but it doesn't matter: the goal is to
 // compare specifically to a poor glyph.
 
 const canvas = buildCanvas(w, h);
 const context = canvas.getContext('2d');
-context.font = `italic ${canvas.height + 0.9}px 'Lato', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Helvetica Neue', 'Helvetica', sans-serif`;
-context.fillStyle = 'black';
+context.fillStyle = 'rgb(64, 96, 32)';
 context.textBaseline = 'top';
 
 const render = (s) => {
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillText(s, -1, -1);
 };
+
+/**
+ * Finds a font size for this device which maximizes our chance of detecting
+ * valid or invalid emoji. We use a 2x2 grid, so look for 75% worth of data.
+ *
+ * @return {!Uint32Array<number>} always four 32-bit ints
+ */
+function prepareEmpty() {
+  let offset = 0.0;
+  let moveOffsetBy = 0.1;
+  let found = null;
+  let count = 0;
+
+  for (let j = 0; j < 10; ++j) {
+    context.font = `italic ${fontSize + offset}px ${fontFamily}`;
+    render('\uffff');  // always unsupported
+
+    const emptyData = context.getImageData(0, 0, w, h);
+    const out = new Uint32Array(emptyData.data.buffer);
+
+    // Count the number of pixels that have any data. F
+    const cand = out.reduce((prev, ours) => ours !== 0 ? prev + 1 : prev, 0);
+    if (cand > count) {
+      count = cand;
+      found = out;
+      if (cand >= 3) {
+        break;
+      }
+    }
+
+    offset = -offset;
+    offset += Math.sign(offset + (moveOffsetBy / 2)) * moveOffsetBy;
+    moveOffsetBy *= 1.2;
+  }
+
+  if (count === 0) {
+    console.warn('could not initialize ok-emoji, zero bytes found');
+    return [0, 0, 0, 0];
+  }
+
+  console.info('found at', count, found, context.font);
+  return found;
+}
 
 // TODO(samthor): For testing
 if (typeof document !== 'undefined') {
@@ -45,9 +89,7 @@ if (typeof document !== 'undefined') {
 }
 
 // TODO(samthor): This is fixed for 16 bytes.
-render('\uffff');  // always unsupported
-const emptyData = context.getImageData(0, 0, w, h);
-const [e0, e1, e2, e3] = new Uint32Array(emptyData.data.buffer);
+const [e0, e1, e2, e3] = prepareEmpty();
 
 /**
  * Is a ZWJ-joined emoji supported?
