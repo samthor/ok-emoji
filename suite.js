@@ -1,5 +1,6 @@
 
 import {split} from './src/encoding.js';
+import {supported} from './src/measure.js';
 
 suite('emoji', () => {
   // test('point count', () => {
@@ -24,6 +25,11 @@ suite('emoji', () => {
       [[0x1f1e6], [0x1f1e6, 0x1f1fa]],
       'expected A,AU (valid 2nd flag)',
     );
+  });
+
+  test('basic \u{1f602} render', () => {
+    assert.isTrue(supported('\u{1f602}'), 'face with tears of joy (E0.6) not supported');
+    assert.isFalse(supported('\u{ffffd}'));
   });
 
   // test('stringify', () => {
