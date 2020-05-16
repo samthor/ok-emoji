@@ -92,30 +92,30 @@ if (typeof document !== 'undefined') {
 const [e0, e1, e2, e3] = prepareEmpty();
 
 /**
- * Is a ZWJ-joined emoji supported?
+ * Is a ZWJ-joined emoji supported? This can use the measureText fast-path.
  *
  * @param {string} s to check
  * @param {number} zwjIndex index of first ZWJ
  * @return {boolean}
  */
 function joinedSupported(s, zwjIndex) {
-
-  // console.info('comparing', s, 'to short', s.substr(0, zwjIndex));
-
   const whole = context.measureText(s);
 
+  // This probably won't work most of the time as the left side is arguably 
+  // This has limited utility but probably is faster in some obscure cases, e.g.:
+  //   - on a variable width system, e.g. a family member is wider than the family itself
+  //   - the left part is itself unsupported (TODO: this seems like a bad case)
   const left = context.measureText(s.substr(0, zwjIndex));
   if (left.width > whole.width) {
     return true;
   }
 
   const right = context.measureText(s.substr(zwjIndex + 1));
-  // console.debug('left', s.substr(0, zwjIndex), left.width, 'right', s.substr(zwjIndex + 1), right.width, 'whole', whole.width);
   return left.width + right.width > whole.width;
 }
 
 /**
- * Is an emoji with skin tone supported?
+ * Is an emoji with skin tone supported? This can use a measureText fast-path.
  *
  * @param {string} s to check, assumed contains tones
  * @return {boolean}
