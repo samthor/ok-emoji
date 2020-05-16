@@ -6,8 +6,7 @@
   "jsnext:main": "index.js",
   "devDependencies": {
     "chai": "^4.1.2",
-    "mocha": "^5.2.0",
-    "mocha-headless-server": "^0.1.1"
+    "mocha": "^5.2.0"
   },
   "repository": {
     "type": "git",
@@ -17,12 +16,15 @@
     "emoji"
   ],
   "scripts": {
-    "test": "mocha-headless-server test.html"
+    "test": "headless-test suite.js"
   },
   "author": "Sam Thorogood <sam.thorogood@mgail.com>",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/samthor/ok-emoji/issues"
   },
-  "homepage": "https://github.com/samthor/ok-emoji#readme"
+  "homepage": "https://github.com/samthor/ok-emoji#readme",
+  "dependencies": {
+    "headless-test": "^1.0.3"
+  }
 }
