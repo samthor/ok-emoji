@@ -21,6 +21,33 @@ export function split(raw) {
 }
 
 /**
+ * @param {string} s to parse, containing zero-many emoji
+ * @yield {!Array<number>} single emoji runs
+ */
+export function *fastIterate(s) {
+  let i = 0;
+  const length = s.length;
+
+  while (i < len) {
+    const start = s.codePointAt(i);
+    if (start === helper.runeZWJ) {
+      ++i;
+      continue;
+    } else if (helper.isTagRune(start)) {
+      i += 2;
+      continue;
+    }
+
+    if (helper.isFlagPoint(start)) {
+      i += 2;  // flag is surrogate pair
+    }
+
+    // TODO: everything
+    i += 1;
+  }
+}
+
+/**
  * @param {string} s to parse, containing many characters
  * @yield {!Array<number>} single emoji runs
  */
