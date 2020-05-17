@@ -41,6 +41,17 @@ export function *iterate(s) {
       i += 2;  // flag is double
       let next = s.codePointAt(i);
 
+      // Country flags, inconsistent or not, work differently across platforms.
+      //   * macOS and iOS will search for valid flags: "ABC" where only "BC" is a valid flag shows
+      //     as "A + flag".
+      //   * ChromeOS (and possibly Linux, by extension) will show "AB" as an "unknown flag" emoji
+      //     followed by "C" in lettering
+      //   * Windows doesn't even support flags (and just shows giant letters).
+      //
+      // However, valid flags tend to complete emoji sequences (they don't start them). A ZWJ seen
+      // after a recognized/unrecognized flag is actually invalid (you can type here, which
+      // attaches the new letters as a prefix of whatever follows us).
+
       // Inconsistent country flags work differently across platforms. Attempt to normalize them in
       // a sane way.
       //   * While flags do support ZWJs, we try to remove them in favour of single characters
