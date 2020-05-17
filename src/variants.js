@@ -50,17 +50,17 @@ const familyExpansion = (() => {
   };
 
   const all = {
-    'n': [helper.runeNuclearFamily],
+    'n': Object.freeze([helper.runeNuclearFamily]),
   };
 
   parents.forEach((parent) => {
     children.forEach((child) => {
       const text = parent + child;
-      all[text] = Object.seal(Array.from(text).map((c) => expand[c]));
+      all[text] = Object.freeze(Array.from(text).map((c) => expand[c]));
     });
   });
 
-  return Object.seal(all);
+  return Object.freeze(all);
 })();
 
 // Describes bases which should be returned in singleBase().
@@ -272,7 +272,7 @@ export function supportsTone(points) {
     return modifierBase.has(points[0]);
   } else if (isPersonGroup(points)) {
     // People are in the list of modifiers, but when used as a group, only "holding hands" supports
-    // skin tone modification (it's double, but caught below).
+    // skin tone modification (it also supports double, see below).
     return points.includes(helper.runeHandshake);
   }
   return !isFamilyPoints(points);

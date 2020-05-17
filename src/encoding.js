@@ -7,6 +7,22 @@ import flags from './flags.js';
 import {jsdecode} from './string.js';
 import * as helper from './helper.js';
 
+// Some notes on country flags. These are inconsistent between platforms and browsers, especially
+// when combined with other characters (i.e., with ZWJ), although this might be invalid per spec.
+//
+//   * Firefox and Safari (presumably iOS too) will search for valid flags: "ABC" will show a flag
+//     for "BC" if "AB" is invalid.
+//   * Chrome on macOS will show all letters of "ABC" individually
+//   * ChromeOS (and possibly Linux) will show "AB" as an "unknown flag" emoji and "C" as a letter
+//   * If [non-flag, ZWJ, A, B, C] appears, Firefox will join with just "A"; Chrome with "AB", and
+//     Safari with nothing.
+//
+// We take the following approach (which can lose data):
+//
+//   * Country flags cannot be part of ZWJ sequences
+//   * Sequences of three characters "ABC" where "BC" are valid are returned as three
+//   * Any flag "AB" is returned as a pair (including invalid ones), but correct wins over three
+
 /**
  * @type {!Set<number>} emoji base which require VS16
  */
@@ -37,57 +53,30 @@ export function *iterate(s) {
     } else if (helper.isTagRune(curr)) {
       i += 2;  // tag is double, invalid
       continue;
-    } else if (helper.isFlagPoint(curr)) {
+    }
+
+    if (helper.isFlagPoint(curr)) {
       i += 2;  // flag is double
-      let next = s.codePointAt(i);
+      const next = s.codePointAt(i);
 
-      // Country flags, inconsistent or not, work differently across platforms.
-      //   * macOS and iOS will search for valid flags: "ABC" where only "BC" is a valid flag shows
-      //     as "A + flag".
-      //   * ChromeOS (and possibly Linux, by extension) will show "AB" as an "unknown flag" emoji
-      //     followed by "C" in lettering
-      //   * Windows doesn't even support flags (and just shows giant letters).
-      //
-      // However, valid flags tend to complete emoji sequences (they don't start them). A ZWJ seen
-      // after a recognized/unrecognized flag is actually invalid (you can type here, which
-      // attaches the new letters as a prefix of whatever follows us).
-
-      // Inconsistent country flags work differently across platforms. Attempt to normalize them in
-      // a sane way.
-      //   * While flags do support ZWJs, we try to remove them in favour of single characters
-      //     * This probably breaks "flag point as letter" hacks
-      //   * The first valid country code is used as a flag, and single points are returned alone
-      //   * ZWJ can join two valid flag points. However, on macOS at least, [A, ZWJ, B, C]:
-      //     * [B,C] is preferred if valid
-      //     * [A,B] is used otherwise
-
-      // This is weird (flag point + ZWJ + flag point), but seemingly valid.
-      if (next === helper.runeZWJ) {
-        i += 1;
-        next = s.codePointAt(i);
-        if (!helper.isFlagPoint(next)) {
-          yield [curr];
-          continue;
-        }
-
-        // But there's a special-case (e.g., Barbados, BB):
-        // B + ZWJ + B + B
-        // ... will show as [B,flag].
-
-        const supernext = s.codePointAt(i + 2);
-
+      if (!helper.isFlagPoint(next)) {
+        yield [curr];
+        continue;
       }
+      i += 2;  // flag is double
 
-      if (helper.isFlagPoint(next)) {
-        const check = String.fromCodePoint(curr, next);
-        if (flags.has(check)) {
+      const check = String.fromCodePoint(curr, next);
+      if (!flags.has(check)) {
+        // we've found points "ABC"; "AB" isn't valid, we don't care if "BC" is, just yield three
+        const supernext = s.codePointAt(i);
+        if (helper.isFlagPoint(supernext)) {
           i += 2;
-          yield [curr, next];
+          yield [curr, next, supernext];
           continue;
         }
       }
-      // if single flag or not valid, yield one at a time
-      yield [curr];
+
+      yield [curr, next];  // normal valid 2-part flag
       continue;
     }
 
@@ -103,6 +92,11 @@ export function *iterate(s) {
       }
 
       curr = s.codePointAt(i);
+      if (curr === helper.runeVS16) {
+        i += 1;  // step over VS16
+        curr = s.codePointAt(i);
+      }
+
       if (helper.isTagRune(curr)) {
         // tagged emoji, consume until runeTagCancel or invalid non-tag
         out.push(curr);
@@ -126,12 +120,10 @@ export function *iterate(s) {
       } else if (helper.isToneModifier(curr)) {
         out.push(curr);  // always consume
         i += 2;          // tone always surrogate
-      } else if (curr === helper.runeVS16) {
-        i += 1;  // single, don't consume
       }
 
       if (s.codePointAt(i) !== helper.runeZWJ) {
-        break;  // yield emoji, done
+        break;  // yield emoji, done (also catches undefined)
       }
       i += 1;  // ZWJ is single
       if (i === length) {
