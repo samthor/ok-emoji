@@ -39,7 +39,34 @@ export function *iterate(s) {
       continue;
     } else if (helper.isFlagPoint(curr)) {
       i += 2;  // flag is double
-      const next = s.codePointAt(i);
+      let next = s.codePointAt(i);
+
+      // Inconsistent country flags work differently across platforms. Attempt to normalize them in
+      // a sane way.
+      //   * While flags do support ZWJs, we try to remove them in favour of single characters
+      //     * This probably breaks "flag point as letter" hacks
+      //   * The first valid country code is used as a flag, and single points are returned alone
+      //   * ZWJ can join two valid flag points. However, on macOS at least, [A, ZWJ, B, C]:
+      //     * [B,C] is preferred if valid
+      //     * [A,B] is used otherwise
+
+      // This is weird (flag point + ZWJ + flag point), but seemingly valid.
+      if (next === helper.runeZWJ) {
+        i += 1;
+        next = s.codePointAt(i);
+        if (!helper.isFlagPoint(next)) {
+          yield [curr];
+          continue;
+        }
+
+        // But there's a special-case (e.g., Barbados, BB):
+        // B + ZWJ + B + B
+        // ... will show as [B,flag].
+
+        const supernext = s.codePointAt(i + 2);
+
+      }
+
       if (helper.isFlagPoint(next)) {
         const check = String.fromCodePoint(curr, next);
         if (flags.has(check)) {
