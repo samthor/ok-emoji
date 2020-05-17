@@ -21,94 +21,90 @@ export function split(raw) {
 }
 
 /**
- * @param {string} s to parse, containing zero-many emoji
- * @yield {!Array<number>} single emoji runs
- */
-export function *fastIterate(s) {
-  let i = 0;
-  const length = s.length;
-
-  while (i < len) {
-    const start = s.codePointAt(i);
-    if (start === helper.runeZWJ) {
-      ++i;
-      continue;
-    } else if (helper.isTagRune(start)) {
-      i += 2;
-      continue;
-    }
-
-    if (helper.isFlagPoint(start)) {
-      i += 2;  // flag is surrogate pair
-    }
-
-    // TODO: everything
-    i += 1;
-  }
-}
-
-/**
- * @param {string} s to parse, containing many characters
+ * @param {string} s to parse, containing zero to many emoji
  * @yield {!Array<number>} single emoji runs
  */
 export function *iterate(s) {
-  const points = jsdecode(s).filter((x) => x !== helper.runeVS16);
+  let i = 0;
+  let curr = 0;
+  const length = s.length;
 
-  const length = points.length;
-  for (let i = 0; i < length; ++i) {
-    const start = points[i];
-    if (start === helper.runeZWJ || helper.isTagRune(start)) {
-      continue;  // just invalid, skip
-    }
-
-    if (helper.isFlagPoint(start)) {
-      const next = points[i + 1];
+  while (i < length) {
+    curr = s.codePointAt(i);
+    if (curr === helper.runeZWJ) {
+      i += 1;  // zwj is single, invalid
+      continue;
+    } else if (helper.isTagRune(curr)) {
+      i += 2;  // tag is double, invalid
+      continue;
+    } else if (helper.isFlagPoint(curr)) {
+      i += 2;  // flag is double
+      const next = s.codePointAt(i);
       if (helper.isFlagPoint(next)) {
-        const check = String.fromCodePoint(start, next);
+        const check = String.fromCodePoint(curr, next);
         if (flags.has(check)) {
-          ++i;
-          yield [start, next];
+          i += 2;
+          yield [curr, next];
           continue;
         }
       }
       // if single flag or not valid, yield one at a time
-      yield [start];
+      yield [curr];
       continue;
     }
 
     // otherwise, this starts an emoji
-    const out = [start];
+    const out = [curr];
+  yieldLoop:
     for (;;) {
-      const next = points[i + 1];
-      if (helper.isTagRune(next)) {
-        // tagged emoji, consume until runeTagCancel or invalid non-tag
-        const from = ++i;
-        for (; i < length; ++i) {
-          const cand = points[i + 1] || 0;
-          if (!helper.isTagRune(cand)) {
-            break;
-          } else if (cand === helper.runeTagCancel) {
-            ++i;
-            break;
-          }
-        }
-        out.push(...points.slice(from, i));
-      } else if (next === helper.runeKeycap || helper.isToneModifier(next)) {
-        // keycap and modifier, simple consumed cases
-        out.push(next);
-        ++i;
+      // move past current emoji (surrogate or not)
+      if (curr > 0xffff) {
+        i += 2;
+      } else {
+        i += 1;
       }
 
-      if (points[i + 1] !== helper.runeZWJ) {
-        break;
+      curr = s.codePointAt(i);
+      if (helper.isTagRune(curr)) {
+        // tagged emoji, consume until runeTagCancel or invalid non-tag
+        out.push(curr);
+        for (;;) {
+          i += 2;
+          if (i === length) {
+            break yieldLoop;
+          }
+          curr = s.codePointAt(i);
+          if (!helper.isTagRune(curr)) {
+            break;
+          } else if (curr === helper.runeTagCancel) {
+            i += 2;
+            break;
+          }
+          out.push(curr);
+        }
+      } else if (curr === helper.runeKeycap) {
+        out.push(curr);  // always consume
+        i += 1;          // keycap is single
+      } else if (helper.isToneModifier(curr)) {
+        out.push(curr);  // always consume
+        i += 2;          // tone always surrogate
+      } else if (curr === helper.runeVS16) {
+        i += 1;  // single, don't consume
       }
-      ++i;
-      const after = points[i + 1];
-      if (start === helper.runeZWJ || helper.isTagRune(after) || helper.isFlagPoint(after)) {
+
+      if (s.codePointAt(i) !== helper.runeZWJ) {
+        break;  // yield emoji, done
+      }
+      i += 1;  // ZWJ is single
+      if (i === length) {
+        break;  // trailing ZWJ
+      }
+
+      curr = s.codePointAt(i);
+      if (helper.isTagRune(curr) || helper.isFlagPoint(curr)) {
         break;  // invalid ZWJ sequence, don't include
       }
-      out.push(after);
-      ++i;
+      out.push(curr);
     }
 
     yield out;

@@ -13,6 +13,7 @@ import * as encoding from './src/encoding.js';
 import * as variants from './src/variants.js';
 import * as expando from './src/expando.js';
 
+import {jsdecode} from './src/string.js';
 import {supported} from './src/measure.js';
 
 // import {emojiPointCount} from './src/emoji.js';
@@ -43,6 +44,9 @@ text.oninput = () => {
     out.textContent = '';
     return;
   }
+
+  console.info('raw', hex(jsdecode(r)), 'parsed', Array.from(encoding.iterate(r)).map(hex).join(', '));
+
   const enc = encoding.split(r)[0];
 
   const base = variants.singleBase(enc);
@@ -52,14 +56,15 @@ variants: ${renderVariants(variants.genderVariants(base))}
 supported: ${supported(encoding.single(base))} (orig: ${supported(encoding.single(enc))})`;
   out.textContent = v;
 
-  const runs = 100;
+  const runs = 1000;
+  console.debug('runs', runs);
+
   const c = encoding.single(base);
   console.time('checks');
   for (let i = 0; i < runs; ++i) {
     supported(c);
   }
   console.timeEnd('checks');
-  console.debug('runs', runs);
 };
 
 text.value = '➡️';
