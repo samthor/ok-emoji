@@ -78,6 +78,12 @@ suite('variations', () => {
     assert.isTrue(supportsDoubleTone([0x1f46d]));
 
     assert.isFalse(supportsTone([0x1f30b, 0x1f4bb]), 'should not support tone just because tone passed');
+
+    // only f/m
+    assert.deepEqual(genderVariants([0x1f57a]), {
+      'f': [0x1f483],
+      'm': [0x1f57a],
+    });
   });
 });
 
