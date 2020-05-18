@@ -1,5 +1,5 @@
 
-import {isToneModifier} from './helper.js';
+import {isToneModifier, isFlagPoint} from './helper.js';
 import {jsdecode} from './string.js';
 import {internalIterateStep} from './encoding.js';
 
@@ -183,13 +183,19 @@ function buildContextSupported(debug) {
   return (s) => {
     const length = s.length;
     let i = 0;
+    let to = 0;
+
     while (i < length) {
+      i = to;  // reset step
+
       const points = [];
-      const to = internalIterateStep(points, s, i);
+      to = internalIterateStep(points, s, i);
+      if (isFlagPoint(points[0])) {
+        // TODO(samthor): assume all country flags work for now
+        continue;
+      }
 
       const raw = s.substring(i, to);
-      i = to;
-
       if (!oldSingleCheck(raw)) {
         return false;
       }
