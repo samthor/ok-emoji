@@ -6,6 +6,9 @@
   input {
     font-family: 'Lato', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Helvetica Neue', 'Helvetica', sans-serif;
   }
+  pre {
+    line-height: 1.5;
+  }
 </style>
 <script type="module">
 
@@ -42,14 +45,16 @@ text.oninput = () => {
   }
   history.replaceState(null, null, '#' + window.encodeURIComponent(r));
 
-  out.textContent = '';
+  out.textContent = `whole support: ${supported(r)}
+
+`;
 
   for (const enc of encoding.iterate(r)) {
     const base = variants.singleBase(enc);
     const v = renderVariants(variants.genderVariants(base));
     const text = `${encoding.single(base)} ${hex(base)}
 tone: ${variants.supportsTone(base) ? (variants.supportsDoubleTone(base) ? 'double' : 'yes') : 'no'}${v ? '\nvariants: ' + v : ''}
-supported: ${supported(encoding.single(base))} (orig: ${supported(encoding.single(enc))})
+supported: ${supported(encoding.single(base))}
 
 `;
     out.append(text);

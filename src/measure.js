@@ -1,7 +1,7 @@
 
 import {isToneModifier} from './helper.js';
 import {jsdecode} from './string.js';
-import {iterate, single} from './encoding.js';
+import {internalIterateStep} from './encoding.js';
 
 /**
  * @param {number} width
@@ -74,8 +74,7 @@ function buildContextSupported(debug) {
     }
 
     if (count === 0) {
-      console.warn('could not initialize ok-emoji, zero bytes found');
-      return [0, 0, 0, 0];
+      throw new TypeError('could not initialize ok-emoji, zero bytes found');
     }
 
     debug && console.info('found at', count, found, context.font);
@@ -136,7 +135,7 @@ function buildContextSupported(debug) {
    * @param {string} s to check
    * @return {boolean}
    */
-  return (s) => {
+  function oldSingleCheck(s) {
     let i = 0;
     const len = s.length;
     let hasTone = false;
@@ -179,7 +178,25 @@ function buildContextSupported(debug) {
     const support = u32[0] !== e0 || u32[1] !== e1 || u32[2] !== e2 || u32[3] !== e3;
 
     return support;
+  }
+
+  return (s) => {
+    const length = s.length;
+    let i = 0;
+    while (i < length) {
+      const points = [];
+      const to = internalIterateStep(points, s, i);
+
+      const raw = s.substring(i, to);
+      i = to;
+
+      if (!oldSingleCheck(raw)) {
+        return false;
+      }
+    }
+    return true;
   };
+
 }
 
 /**
