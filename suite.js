@@ -43,6 +43,7 @@ suite('encoding', () => {
   test('tone vs VS16', () => {
     assert.equal(single([0x261d]), '\u{261d}\u{fe0f}', 'implicit VS16');
     assert.equal(single([0x261d, 0x1f3ff]), '\u{261d}\u{1f3ff}', 'tone replaces VS16');
+    assert.equal(single([0x1f3cc, 0x2640]), '\u{1f3cc}\u{fe0f}\u{200d}\u{2640}\u{fe0f}', 'needs two VS16s');
   });
 });
 
