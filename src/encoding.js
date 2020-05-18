@@ -152,6 +152,64 @@ export function join(arr) {
 }
 
 /**
+ * Appends a single part to the passed array. Starts with a ZWJ if needed.
+ *
+ * @param {!Array<number>} out
+ * @param {!Array<number>} points
+ * @param {number} i where within points to operate
+ * @return {number} new position within points
+ */
+export function internalSinglePart(out, points, i) {
+  const start = points[i];
+  const isFlag = helper.isFlagPoint(start);
+
+  const last = out.length !== 0 ? out[out.length - 1] : 0;
+  if (last === 0 || isFlag || helper.isFlagPoint(last)) {
+    // do nothing
+  } else {
+    out.push(helper.runeZWJ);
+  }
+
+  out.push(start);
+  i += 1;  // consumed it
+  if (isFlag) {
+    return i;
+  }
+
+  const next = i === points.length ? 0 : points[i];
+  if (next === 0) {
+    // do nothing
+  } else if (helper.isTagRune(next)) {
+    // consume all tags until cancel or not a tag
+    i += 1;  // we checked 'next'
+    for (; i < points.length; ++i) {
+      const check = points[i];
+      if (!helper.isTagRune(check)) {
+        break;
+      }
+      // nb. We don't expect to see runeTagCancel here.
+      out.push(check);
+    }
+    out.push(helper.runeTagCancel);
+    return i;
+  } else if (helper.isToneModifier(next)) {
+    out.push(next);
+    return i + 1;
+  }
+
+  if (variation.has(start)) {
+    out.push(helper.runeVS16);  // insert VS16 if not tone modified (tone implies emoji already)
+  }
+
+  if (next === helper.runeKeycap) {
+    out.push(next);
+    return i + 1;
+  }
+
+  return i;
+}
+
+/**
  * Joins a series of emoji points for display as one character (i.e., includes ZWJs to join).
  *
  * Adds VS16 as needed for emoji requiring the selector.
@@ -161,55 +219,9 @@ export function join(arr) {
  */
 export function single(points) {
   const out = [];
-  let wasFlag = false;
 
-  for (let i = 0; i < points.length; ++i) {
-    const start = points[i];
-    out.push(start);
-
-    if (helper.isFlagPoint(start)) {
-      wasFlag = true;
-      continue;  // flags, ignore
-    } else if (!wasFlag && i) {
-      // wasn't a flag and we're past 1st point: add ZWJ
-      out.splice(out.length - 1, 0, helper.runeZWJ);
-    }
-    wasFlag = false;
-
-    const next = points[i + 1] || 0;
-
-    if (helper.isTagRune(next)) {
-      // consume all tags until cancel or not a tag
-      let j = i + 1;
-      while (j < points.length) {
-        // nb. checks ourselves again, in case the start is runeTagCancel
-        if (!helper.isTagRune(points[j]) || points[j] === helper.runeTagCancel) {
-          break;
-        }
-        out.push(points[j]);
-        ++j;
-      }
-      out.push(helper.runeTagCancel);
-      i = j;
-      continue;
-    }
-
-    if (helper.isToneModifier(next)) {
-      out.push(next);
-      ++i;
-      continue;
-    }
-
-    if (variation.has(start)) {
-      out.push(helper.runeVS16);  // insert VS16 if not tone modified (tone implies emoji already)
-    }
-
-    if (next === helper.runeKeycap) {
-      out.push(next);
-      ++i;
-      continue;
-    }
-  }
+  const is = internalSinglePart.bind(null, out, points);
+  for (let i = 0; i < points.length; i = is(i)) {}
 
   return String.fromCodePoint.apply(null, out);
 }
