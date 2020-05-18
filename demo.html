@@ -14,14 +14,9 @@ import * as variants from './src/variants.js';
 import * as expando from './src/expando.js';
 
 import {jsdecode} from './src/string.js';
-import {supported} from './src/measure.js';
+import {prepare, supported} from './src/measure.js';
 
-// import {emojiPointCount} from './src/emoji.js';
-// import {countRenderPoints, isSingleValidEmoji, isSingleAmbig} from './src/measurer.js';
-
-// import isExpectedLength from './index.js';  // use default import
-
-// ambig.textContent = `ambig=${isSingleAmbig}`;
+prepare(true);  // show debug
 
 function renderVariants(object) {
   if (object === null) {
@@ -41,33 +36,27 @@ function hex(all) {
 text.oninput = () => {
   const r = text.value;
   if (!r) {
+    history.replaceState(null, null, window.location.pathname);
     out.textContent = '';
     return;
   }
+  history.replaceState(null, null, '#' + window.encodeURIComponent(r));
 
-  console.info('raw', hex(jsdecode(r)), 'parsed', Array.from(encoding.iterate(r)).map(hex).join(', '));
+  out.textContent = '';
 
-  const enc = encoding.split(r)[0];
+  for (const enc of encoding.iterate(r)) {
+    const base = variants.singleBase(enc);
+    const v = renderVariants(variants.genderVariants(base));
+    const text = `${encoding.single(base)} ${hex(base)}
+tone: ${variants.supportsTone(base) ? (variants.supportsDoubleTone(base) ? 'double' : 'yes') : 'no'}${v ? '\nvariants: ' + v : ''}
+supported: ${supported(encoding.single(base))} (orig: ${supported(encoding.single(enc))})
 
-  const base = variants.singleBase(enc);
-  const v = `base: ${encoding.single(base)} ${hex(base)}
-tone: ${variants.supportsTone(base) ? (variants.supportsDoubleTone(base) ? 'double' : 'yes') : 'no'}
-variants: ${renderVariants(variants.genderVariants(base))}
-supported: ${supported(encoding.single(base))} (orig: ${supported(encoding.single(enc))})`;
-  out.textContent = v;
-
-  const runs = 1000;
-  console.debug('runs', runs);
-
-  const c = encoding.single(base);
-  console.time('checks');
-  for (let i = 0; i < runs; ++i) {
-    supported(c);
+`;
+    out.append(text);
   }
-  console.timeEnd('checks');
 };
 
-text.value = '➡️';
+text.value = window.decodeURIComponent(window.location.hash.substr(1));
 text.oninput();
 
 </script>

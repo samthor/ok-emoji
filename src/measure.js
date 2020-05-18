@@ -1,6 +1,7 @@
 
 import {isToneModifier} from './helper.js';
 import {jsdecode} from './string.js';
+import {iterate, single} from './encoding.js';
 
 /**
  * @param {number} width
@@ -19,7 +20,7 @@ function buildCanvas(width, height) {
   throw new TypeError(`no canvas available`);
 }
 
-function buildContextSupported() {
+function buildContextSupported(debug) {
   const w = 2;
   const h = 2;
   const fontFamily = `'Lato', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Helvetica Neue', 'Helvetica', sans-serif`;
@@ -77,12 +78,12 @@ function buildContextSupported() {
       return [0, 0, 0, 0];
     }
 
-    console.info('found at', count, found, context.font);
+    debug && console.info('found at', count, found, context.font);
     return found;
   }
 
-  // TODO(samthor): For testing
-  if (typeof document !== 'undefined') {
+  // If we're asked to debug, then add the canvas to screen.
+  if (debug && typeof document !== 'undefined') {
     canvas.style.width = `${canvas.width * 10}px`;
     canvas.style.height = `${canvas.height * 10}px`;
     canvas.style.imageRendering = 'pixelated';
@@ -182,12 +183,28 @@ function buildContextSupported() {
 }
 
 /**
+ * Prepares the measure module. This will throw an exception if we're e.g. in Node where rendering
+ * is unsupported.
+ *
+ * @param {boolean=} debug
+ * @throws {TypeError}
+ */
+export function prepare(debug = false) {
+  try {
+    supported = buildContextSupported(debug);
+  } catch (e) {
+    supported = () => true;
+    throw e;
+  }
+}
+
+/**
  * Checks a single emoji for validity. Has unknown results for sequences of more than one.
  *
  * @param {string} s to check
  * @return {boolean}
  */
 export function supported(s) {
-  supported = buildContextSupported();
+  prepare();
   return supported(s);
 }
