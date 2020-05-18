@@ -2,11 +2,12 @@
   "name": "ok-emoji",
   "version": "1.0.3",
   "description": "Finds whether an emoji is supported in the browser",
+  "type": "module",
   "module": "index.js",
   "jsnext:main": "index.js",
   "devDependencies": {
     "chai": "^4.1.2",
-    "mocha": "^5.2.0"
+    "mocha": "^7.1.2"
   },
   "repository": {
     "type": "git",

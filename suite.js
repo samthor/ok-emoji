@@ -3,6 +3,15 @@ import {split, single, iterate} from './src/encoding.js';
 import {supported} from './src/measure.js';
 import {singleBase, genderVariants, supportsDoubleTone, supportsTone} from './src/variants.js';
 
+// TODO(samthor): We don't support being run on the command-line. Update headless-test.
+
+// import mocha from 'mocha';
+// const {suite, test} = mocha;
+
+// import chai from 'chai';
+// const {assert} = chai;
+
+
 const measureSupport =
     (typeof HTMLCanvasElement !== 'undefined' || typeof OffscreenCanvas !== 'undefined');
 
@@ -29,6 +38,11 @@ suite('encoding', () => {
 
   test('join', () => {
     assert.equal(single([0x1f469, 0x2764, 0x1f468]), '👩‍❤️‍👨', 'zwj should auto-qualify');
+  });
+
+  test('tone vs VS16', () => {
+    assert.equal(single([0x261d]), '\u{261d}\u{fe0f}', 'implicit VS16');
+    assert.equal(single([0x261d, 0x1f3ff]), '\u{261d}\u{1f3ff}', 'tone replaces VS16');
   });
 });
 
