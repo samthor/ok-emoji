@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ok-emoji showcase</title>
+  <style>
+    pre {
+      line-height: 1.2;
+    }
+    summary {
+      cursor: pointer;
+      font-family: monospace;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+  </style>
+</head>
+<body>
+
+<script type="module">
+
+import {jsdecode} from './src/string.js';
+import {prepare, supported} from './src/measure.js';
+
+prepare();
+const infoElement = document.getElementById('info');
+
+fetch('parsed.json').then((r) => r.json()).then((out) => {
+  const start = performance.now();
+  let checks = 0;
+  for (const {all} of out) {
+    for (const row of all) {
+      row.support = supported(row.emoji);
+    }
+    checks += all.length;
+  }
+  const duration = performance.now() - start;
+  info.textContent = `duration: ${duration.toFixed(2)}ms (${checks} checks)`;
+
+  for (const {version, all} of out) {
+    const el = document.createElement('details');
+
+    const summary = document.createElement('summary');
+    const pre = document.createElement('pre');
+
+    el.append(summary, pre);
+
+    let count = 0;
+    for (const {emoji, support} of all) {
+      if (!support) {
+        pre.append('× ', emoji, '\n');
+      }
+    }
+    for (const {emoji, support} of all) {
+      if (support) {
+        pre.append('✓ ', emoji, '\n');
+        ++count;
+      }
+    }
+
+    const rate = count / all.length;
+    summary.textContent = `${version} ${(rate * 100).toFixed(2)}%`;
+
+    document.body.append(el);
+  }
+});
+
+
+</script>
+
+<h1>ok-emoji showcase</h1>
+
+<p id="info"></p>
+
+</body>
+</html>
