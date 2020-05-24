@@ -23,7 +23,7 @@ function buildCanvas(width, height) {
 function buildContextSupported(debug) {
   const w = 2;
   const h = 2;
-  const fontFamily = `'Lato', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Helvetica Neue', 'Helvetica', sans-serif`;
+  const fontFamily = `'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Helvetica Neue', 'Helvetica', monospace, sans-serif`;
   const fontSize = h + 0.5;
 
   // The exact position/size of the font used isn't perfect, but it doesn't matter: the goal is to
@@ -100,19 +100,20 @@ function buildContextSupported(debug) {
    * @return {boolean}
    */
   function joinedSupported(s, zwjIndex) {
-    const whole = context.measureText(s);
+    const {width: whole} = context.measureText(s);
 
     // This probably won't work most of the time as the left side is arguably 
     // This has limited utility but probably is faster in some obscure cases, e.g.:
     //   - on a variable width system, e.g. a family member is wider than the family itself
     //   - the left part is itself unsupported (TODO: this seems like a bad case)
-    const left = context.measureText(s.substr(0, zwjIndex));
-    if (left.width > whole.width) {
+    const {width: left} = context.measureText(s.substr(0, zwjIndex));
+    debug && console.info('got', `'${s}'`, 'width', whole, 'left', left);
+    if (left > whole) {
       return true;
     }
 
-    const right = context.measureText(s.substr(zwjIndex + 1));
-    return left.width + right.width > whole.width;
+    const {width: right} = context.measureText(s.substr(zwjIndex + 1));
+    return left + right > whole;
   }
 
   /**
@@ -126,9 +127,9 @@ function buildContextSupported(debug) {
     const clean = points.filter((point) => !isToneModifier(point));
     const compare = String.fromCodePoint.apply(null, clean);
 
-    const originalMetric = context.measureText(s);
-    const cleanMetric = context.measureText(compare);
-    return originalMetric.width === cleanMetric.width;
+    const {width: originalWidth} = context.measureText(s);
+    const {width: cleanWidth} = context.measureText(compare);
+    return originalWidth === cleanWidth;
   }
 
   /**
