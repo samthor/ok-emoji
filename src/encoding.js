@@ -200,12 +200,13 @@ export function internalSinglePart(out, points, i) {
     // do nothing
   } else if (helper.isTagRune(next)) {
     // consume all tags until cancel or not a tag
+    out.push(next);
     i += 1;  // we checked 'next'
     for (; i < points.length; ++i) {
       const check = points[i];
       if (!helper.isTagRune(check)) {
         break;
-      } else if (check === runeTagCancel) {
+      } else if (check === helper.runeTagCancel) {
         // shouldn't happen, handle anyway
         ++i;
         break;
