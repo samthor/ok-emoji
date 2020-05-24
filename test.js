@@ -45,6 +45,10 @@ suite('encoding', () => {
     assert.equal(single([0x261d, 0x1f3ff]), '\u{261d}\u{1f3ff}', 'tone replaces VS16');
     assert.equal(single([0x1f3cc, 0x2640]), '\u{1f3cc}\u{fe0f}\u{200d}\u{2640}\u{fe0f}', 'needs two VS16s');
   });
+
+  test('tagged reassemble', () => {
+    assert.equal(single([0x1f3f4, 0xe0067, 0xe0062, 0xe0073, 0xe0063, 0xe0074]), '🏴󠁧󠁢󠁳󠁣󠁴󠁿');
+  });
 });
 
 suite('variations', () => {
