@@ -2,6 +2,7 @@
 import {split, single, iterate} from './src/encoding.js';
 import {supported} from './src/measure.js';
 import {singleBase, genderVariants, supportsDoubleTone, supportsTone} from './src/variants.js';
+import {normalize} from './src/valid.js';
 
 // TODO(samthor): We don't support being run on the command-line. Update headless-test.
 
@@ -88,6 +89,12 @@ suite('variations', () => {
       'f': [0x1f483],
       'm': [0x1f57a],
     });
+  });
+});
+
+suite('normalize', () => {
+  test('santa', () => {
+    assert.equal(normalize('🎅🏼').s, '🧑‍🎄', 'santa should revert to mx claus');
   });
 });
 
