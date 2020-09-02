@@ -2,7 +2,7 @@
  * @fileoverview Helpers to convert emoji string to raw points and back.
  */
 
-import {variation as source} from './raw/defs.js';
+import {variation as variationSource} from './raw/defs.js';
 import flags from './flags.js';
 import {jsdecode} from './string.js';
 import * as helper from './helper.js';
@@ -26,7 +26,7 @@ import * as helper from './helper.js';
 /**
  * @type {!Set<number>} emoji base which require VS16
  */
-const variation = new Set(jsdecode(source));
+const variationSet = new Set(jsdecode(variationSource));
 
 /**
  * @param {string} raw to split
@@ -231,7 +231,7 @@ function internalSinglePart(out, points, i) {
     return i + 1;
   }
 
-  if (variation.has(start)) {
+  if (variationSet.has(start)) {
     out.push(helper.runeVS16);  // insert VS16 if not tone modified (tone implies emoji already)
   }
 
