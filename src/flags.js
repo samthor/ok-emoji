@@ -23,7 +23,21 @@ function buildSet(source) {
   return all;
 }
 
+const flagSet = buildSet(source);
+
+/**
+ * Do the passed code points make up a flag?
+ *
+ * @param {number} pointA
+ * @param {number} pointB
+ * @return {boolean}
+ */
+export function isFlag(pointA, pointB) {
+  const check = String.fromCodePoint(pointA, pointB);
+  return flagSet.has(check);
+}
+
 /**
  * @type {!Set<string>}
  */
-export default buildSet(source);
+export default flagSet;

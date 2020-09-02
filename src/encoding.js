@@ -37,6 +37,8 @@ export function split(raw) {
 }
 
 /**
+ * Exported for use in measure. Otherwise internal.
+ *
  * @param {!Array<number>} out
  * @param {string} s
  * @param {number} i
@@ -138,8 +140,10 @@ export function internalIterateStep(out, s, i) {
 }
 
 /**
+ * Iterate over a longer string containing emoji. Yields single emoji or character.
+ *
  * @param {string} s to parse, containing zero to many emoji
- * @yield {!Array<number>} single emoji runs
+ * @yields {!Array<number>} single emoji runs
  */
 export function *iterate(s) {
   const length = s.length;
@@ -156,7 +160,7 @@ export function *iterate(s) {
 }
 
 /**
- * Joins a series of known emoji for display.
+ * Joins a series of single emoji for display.
  *
  * @param {!Array<!Array<number>>} arr
  * @return {string}
@@ -173,7 +177,7 @@ export function join(arr) {
  * @param {number} i where within points to operate
  * @return {number} new position within points
  */
-export function internalSinglePart(out, points, i) {
+function internalSinglePart(out, points, i) {
   if (i === points.length) {
     return i;
   }
@@ -220,20 +224,22 @@ export function internalSinglePart(out, points, i) {
     return i + 1;
   }
 
-  if (variation.has(start)) {
-    out.push(helper.runeVS16);  // insert VS16 if not tone modified (tone implies emoji already)
-  }
-
+  // we don't know about keycap variants on their own, just apply if used as keycap
   if (next === helper.runeKeycap) {
+    out.push(helper.runeVS16)
     out.push(next);
     return i + 1;
+  }
+
+  if (variation.has(start)) {
+    out.push(helper.runeVS16);  // insert VS16 if not tone modified (tone implies emoji already)
   }
 
   return i;
 }
 
 /**
- * Joins a series of emoji points for display as one character (i.e., includes ZWJs to join).
+ * Joins a single emoji for display as one character (i.e., includes ZWJs to join).
  *
  * Adds VS16 as needed for emoji requiring the selector.
  *

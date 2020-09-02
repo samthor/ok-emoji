@@ -75,6 +75,8 @@ const extraBases = buildSourceMap(extraBasesSource);
 const genderVariantSource = extraBasesSource.concat([
   0, 0x1f483, 0x1f57a,  // dancers
   0, 0x1f478, 0x1f934,  // princess, prince
+  0, 0x1f930, 0,        // pregnant woman
+  0, 0x1f9d5, 0,        // woman with headscarf
 ]);
 const genderVariant = buildSourceMap(genderVariantSource);
 
@@ -143,6 +145,7 @@ function internalSingleBase(points) {
  * @return {!Array<number>} simplified common emoji (neuter etc)
  */
 export function singleBase(points) {
+  points = points.slice();  // as we call expando which changes this
   const possibleExpando = expando(points) || helper.isGenderPerson(points[0]);
 
   points = internalSingleBase(points);
@@ -182,12 +185,15 @@ function internalGenderVariants(base) {
     // already be gendered; we don't care, just get the shared result and return all cases.
     if (genderVariant.has(only)) {
       const [n, f, m] = genderVariant.get(only);
-      const out = {
-        'f': [f],
-        'm': [m],
-      };
+      const out = {};
       if (n !== 0) {
         out['n'] = [n];
+      }
+      if (f !== 0) {
+        out['f'] = [f];
+      }
+      if (m !== 0) {
+        out['m'] = [m];
       }
       return out;
     }
@@ -235,7 +241,7 @@ function internalGenderVariants(base) {
 }
 
 /**
- * Finds gender variants for the passed emoji, or null if there are none.
+ * Finds gender variants for the passed single emoji, or null if there are none.
  *
  * The returned object contains keys related to the type of variant generated. Different emoji may
  * cause different keys to appear.
@@ -244,6 +250,7 @@ function internalGenderVariants(base) {
  * @return {?Object<string, !Array<number>>} possible variants
  */
 export function genderVariants(points) {
+  points = points.slice();  // as we call expando which changes this
   const possibleExpando = expando(points) || helper.isGenderPerson(points[0]);
   const base = internalSingleBase(points);
 
@@ -286,6 +293,7 @@ export function supportsTone(points) {
  */
 export function supportsDoubleTone(points) {
   // look for non-expandoed holding hands cases plus real one
+  // this is "WOMEN HOLDING HANDS", "MEN HOLDING HANDS", and "WOMAN AND MAN HOLDING HANDS"
   return (points[0] >= 0x1f46b && points[0] <= 0x1f46d) ||
       (isPersonGroup(points) && points.includes(helper.runeHandshake));
 }

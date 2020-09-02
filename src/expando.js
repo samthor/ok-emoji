@@ -10,24 +10,34 @@
 
 import * as helper from './helper.js';
 
+
+const expandoWomenHoldingHands = 0x1f46d;
+const expandoMenHoldingHands = 0x1f46c;
+const expandoWomanAndManHoldingHands = 0x1f46b;
+const expandoKiss = 0x1f48f;
+const expandoCoupleWithHeart = 0x1f491;
+const expandoMrsClaus = 0x1f936;
+const expandoSantaClaus = 0x1f385;
+
+
 /**
  * @type {!Array<number|!Array<number>>} maps simple old-style emoji to their effective expansion
  */
 const expandosSource = [
   // "women holding hands"
-  0x1f46d, [helper.runePersonWoman, helper.runeHandshake, helper.runePersonWoman],
+  expandoWomenHoldingHands, [helper.runePersonWoman, helper.runeHandshake, helper.runePersonWoman],
   // "men holding hands"
-  0x1f46c, [helper.runePersonMan, helper.runeHandshake, helper.runePersonMan],
+  expandoMenHoldingHands, [helper.runePersonMan, helper.runeHandshake, helper.runePersonMan],
   // "woman and man holding hands"
-  0x1f46b, [helper.runePersonWoman, helper.runeHandshake, helper.runePersonMan],
+  expandoWomanAndManHoldingHands, [helper.runePersonWoman, helper.runeHandshake, helper.runePersonMan],
   // "kiss" (implied neutral)
-  0x1f48f, [helper.runePerson, helper.runeHeart, helper.runeKiss, helper.runePerson],
+  expandoKiss, [helper.runePerson, helper.runeHeart, helper.runeKiss, helper.runePerson],
   // "couple with heart" (implied neutral)
-  0x1f491, [helper.runePerson, helper.runeHeart, helper.runePerson],
+  expandoCoupleWithHeart, [helper.runePerson, helper.runeHeart, helper.runePerson],
   // "mrs claus"
-  0x1f936, [helper.runePersonWoman, helper.runeHolidayTree],
+  expandoMrsClaus, [helper.runePersonWoman, helper.runeHolidayTree],
   // "santa claus"
-  0x1f385, [helper.runePersonMan, helper.runeHolidayTree],
+  expandoSantaClaus, [helper.runePersonMan, helper.runeHolidayTree],
 ];
 
 
@@ -40,23 +50,27 @@ for (let i = 0; i < expandosSource.length; i += 2) {
 
 
 /**
- * Expand from a real emoji to its convertible representation. Modifies the passed array in-place.
+ * Expand from a real, single emoji to its convertible representation. Modifies the passed array
+ * in-place.
  *
  * @param {!Array<number>} source
  * @return {boolean} if there was a change
  */
 export function expando(source) {
-  if (source.length > 2) {
-    return false;
-  }
-
   let tone = 0;
-  if (source.length === 2) {
-    if (!helper.isToneModifier(source[1])) {
-      // can only be a single point, or a single point plus modifier
+
+  switch (source.length) {
+    case 1:
+      break;
+    case 2:
+      if (!helper.isToneModifier(source[1])) {
+        // can only be a single point, or a single point plus modifier
+        return false;
+      }
+      tone = source[1];
+      break;
+    default:
       return false;
-    }
-    tone = source[1];
   }
 
   const data = expandos.get(source[0]);
@@ -66,10 +80,10 @@ export function expando(source) {
 
   source.splice(0, source.length, ...data);
   if (tone !== 0) {
-    // splice in skintone after first point and last point
+    // splice in skintone after first point
     source.splice(1, 0, tone);
     if (data.length > 2) {
-      // Claus family is just a single person
+      // and splice in after last point (this excludes Santa family, single person only)
       source.splice(source.length, 0, tone);
     }
   }
@@ -77,14 +91,14 @@ export function expando(source) {
 }
 
 /**
- * Deexpand from a convertible representation to a real emoji.
+ * Deexpand from a convertible representation of a single emoji to a real emoji. This just works by
+ * manually checking all the cases for now. Modifies in-place.
  *
  * @param {!Array<number>} source
  * @return {boolean} if there was a change
  */
 export function deexpando(source) {
-  // This just works by manually checking all the cases. 
-
+  // all expandos are minimum 2-points, and start with a person
   if (source.length < 2 || !helper.isGenderPerson(source[0])) {
     return false;
   }
@@ -116,7 +130,7 @@ export function deexpando(source) {
       if (i + 1 !== source.length) {
         return false;  // don't know what this is
       }
-      source.splice(0, source.length, headPerson === helper.runePersonMan ? 0x1f385 : 0x1f936);
+      source.splice(0, source.length, headPerson === helper.runePersonMan ? expandoSantaClaus : expandoMrsClaus);
       if (headTone) {
         source.push(headTone);
       }
@@ -156,17 +170,17 @@ export function deexpando(source) {
   if (mode === helper.runeHandshake) {
     if (headPerson === helper.runePersonWoman) {
       if (tailPerson === helper.runePersonWoman) {
-        output = 0x1f46d;  // "women holding hands"
+        output = expandoWomenHoldingHands;  // "women holding hands"
       } else if (tailPerson === helper.runePersonMan) {
-        output = 0x1f46b;  // "woman and man holding hands"
+        output = expandoWomanAndManHoldingHands;  // "woman and man holding hands"
       }
     } else if (headPerson === helper.runePersonMan && tailPerson === headPerson) {
-      output = 0x1f46c;  // "men holding hands"
+      output = expandoMenHoldingHands;  // "men holding hands"
     }
     // skipped options: m/p, w/p, m/f (it's always f/m)
   } else if (tailPerson === helper.runePerson) {
     // either "couple with heart" or "kiss" (both neutral)
-    output = (mode === helper.runeHeart ? 0x1f491 : 0x1f48f);
+    output = (mode === helper.runeHeart ? expandoCoupleWithHeart : expandoKiss);
   }
   if (output === 0) {
     return false;
@@ -175,7 +189,7 @@ export function deexpando(source) {
   // We found a match! Swap out the source content for the real emoji.
   source.splice(0, source.length, output);
   if (tailTone) {
-    source.push(tailTone);
+    source.push(tailTone);  // could use headTone, they must be the same
   }
   return true;
 }

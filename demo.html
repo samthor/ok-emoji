@@ -17,6 +17,7 @@ import * as encoding from './src/encoding.js';
 import * as variants from './src/variants.js';
 import * as expando from './src/expando.js';
 
+import {normalize} from './src/valid.js';
 import {jsdecode} from './src/string.js';
 import {prepare, supported} from './src/measure.js';
 
@@ -34,6 +35,9 @@ function renderVariants(object) {
 }
 
 function hex(all) {
+  if (typeof all === 'string') {
+    all = Array.from(all).map((x) => x.codePointAt(0));
+  }
   return `[${all.map((x) => x.toString(16)).join(', ')}]`;
 }
 
@@ -46,14 +50,17 @@ text.oninput = () => {
   }
   history.replaceState(null, null, '#' + window.encodeURIComponent(r));
 
+  const {s: normalized, unknownMulti} = normalize(r);
+
   out.textContent = `whole support: ${supported(r)}
+  normalized: ${normalized} (unknownMulti=${unknownMulti})
 
 `;
 
   for (const enc of encoding.iterate(r)) {
     const base = variants.singleBase(enc);
     const v = renderVariants(variants.genderVariants(base));
-    const text = `${encoding.single(base)} ${hex(base)}
+    const text = `base: ${encoding.single(base)} ${hex(base)} => ${hex(encoding.single(base))}
 tone: ${variants.supportsTone(base) ? (variants.supportsDoubleTone(base) ? 'double' : 'yes') : 'no'}${v ? '\nvariants: ' + v : ''}
 supported: ${supported(encoding.single(base))}
 
