@@ -20,11 +20,11 @@ However, many releases have tweaked or update the rules for emoji, typically w.r
 
 ### 2019 (E12)
 
-Emoji 12.1 added nearly all (except "MX CLAUS", below) missing gender neutral professions.
+Emoji 12.1 added nearly all missing gender neutral professions.
 Previously, professions were only created by "MAN/WOMAN + ZWJ + ROLE", e.g. "MAN + ZWJ + MICROPHONE" for "MAN SINGER", but 12.1 allows "PERSON + ZWJ + ROLE".
 
 Additionally, across 12.0 and 12.1, support was added for skin tones for the "WOMAN AND MAN HOLDING HANDS" and related emoji.
-This includes different skin tones for each person in the emoji.
+This allows different skin tones for both people in the emoji.
 
 ### 2020 (E13)
 
