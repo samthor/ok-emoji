@@ -18,34 +18,48 @@ const expandoKiss = 0x1f48f;
 const expandoCoupleWithHeart = 0x1f491;
 const expandoMrsClaus = 0x1f936;
 const expandoSantaClaus = 0x1f385;
-
+const expandoPrincess = 0x1f478;
+const expandoPrince = 0x1f934;
+const expandoWomanDancing = 0x1f483;
+const expandoManDancing = 0x1f57a;
 
 /**
  * @type {!Array<number|!Array<number>>} maps simple old-style emoji to their effective expansion
  */
-const expandosSource = [
-  // "women holding hands"
+const complexExpandoSource = [
   expandoWomenHoldingHands, [helper.runePersonWoman, helper.runeHandshake, helper.runePersonWoman],
-  // "men holding hands"
   expandoMenHoldingHands, [helper.runePersonMan, helper.runeHandshake, helper.runePersonMan],
-  // "woman and man holding hands"
   expandoWomanAndManHoldingHands, [helper.runePersonWoman, helper.runeHandshake, helper.runePersonMan],
-  // "kiss" (implied neutral)
   expandoKiss, [helper.runePerson, helper.runeHeart, helper.runeKiss, helper.runePerson],
-  // "couple with heart" (implied neutral)
   expandoCoupleWithHeart, [helper.runePerson, helper.runeHeart, helper.runePerson],
-  // "mrs claus"
-  expandoMrsClaus, [helper.runePersonWoman, helper.runeHolidayTree],
-  // "santa claus"
-  expandoSantaClaus, [helper.runePersonMan, helper.runeHolidayTree],
+];
+const simpleExpandoSource = [
+  [0, expandoMrsClaus, expandoSantaClaus], helper.runeHolidayTree,
+  [0, expandoPrincess, expandoPrince], helper.runeCrown,
+  [0, expandoWomanDancing, expandoManDancing, 0], helper.runeMusicalNotes,
 ];
 
-
 const expandos = new Map();
-for (let i = 0; i < expandosSource.length; i += 2) {
-  const source = expandosSource[i];
-  const expando = expandosSource[i+1];
+const deexpandoSimple = new Map();
+
+for (let i = 0; i < complexExpandoSource.length; i += 2) {
+  const source = complexExpandoSource[i+0];
+  const expando = complexExpandoSource[i+1];
   expandos.set(source, expando);
+}
+for (let i = 0; i < simpleExpandoSource.length; i += 2) {
+  const source = simpleExpandoSource[i+0];
+  const profession = simpleExpandoSource[i+1];
+
+  const people = [helper.runePerson, helper.runePersonWoman, helper.runePersonMan];
+  const data = people.map((person, i) => {
+    const from = source[i];
+    if (from !== 0) {
+      expandos.set(from, [person, profession]);
+    }
+    return from;
+  });
+  deexpandoSimple.set(profession, data);
 }
 
 
@@ -73,17 +87,17 @@ export function expando(source) {
       return false;
   }
 
-  const data = expandos.get(source[0]);
-  if (data === undefined) {
+  const expanded = expandos.get(source[0]);
+  if (expanded === undefined) {
     return false;
   }
 
-  source.splice(0, source.length, ...data);
+  source.splice(0, source.length, ...expanded);
   if (tone !== 0) {
     // splice in skintone after first point
     source.splice(1, 0, tone);
-    if (data.length > 2) {
-      // and splice in after last point (this excludes Santa family, single person only)
+    if (expanded.length > 2) {
+      // and splice in after last point (this matches long groups with multiple people only)
       source.splice(source.length, 0, tone);
     }
   }
@@ -117,25 +131,39 @@ export function deexpando(source) {
     i = 2;
   }
 
-  // Determine whether this is a valid expanded emoji. This is all manual because there's only ~7
-  // cases right now.
+  // Determine whether this is a valid expanded emoji. This is automated for the simple profession
+  // expansion cases but has logic for the others.
   let mode = source[i];
 
-  switch (mode) {
-    case helper.runeHolidayTree:
-      // the Claus family is just a single person so we don't follow the below logic
-      if (headPerson === helper.runePerson) {
-        return false;  // "mx claus" is the expanded version, don't change
-      }
-      if (i + 1 !== source.length) {
-        return false;  // don't know what this is
-      }
-      source.splice(0, source.length, headPerson === helper.runePersonMan ? expandoSantaClaus : expandoMrsClaus);
-      if (headTone) {
-        source.push(headTone);
-      }
-      return true;
+  // Check simple mode. These are Santa, Crown, etc.
+  const people = deexpandoSimple.get(mode);
+  if (people !== undefined) {
+    if (i + 1 !== source.length) {
+      return false;  // don't know what this is
+    }
+    // simple mode
+    let index = 0;
+    switch (headPerson) {
+      case helper.runeGenderFemale:
+        index = 1;
+        break;
+      case helper.runePersonMan:
+        index = 2;
+        break;
+    }
 
+    const out = people[index];
+    if (out === 0) {
+      return false;
+    }
+    source.splice(0, source.length, out);
+    if (headTone) {
+      source.push(headTone);
+    }
+    return true;
+  }
+
+  switch (mode) {
     case helper.runeHandshake:
       if (headPerson === helper.runePerson) {
         return false;  // only for F/M holding hands

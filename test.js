@@ -3,6 +3,9 @@ import {split, single, iterate} from './src/encoding.js';
 import {supported} from './src/measure.js';
 import {singleBase, genderVariants, supportsDoubleTone, supportsTone} from './src/variants.js';
 import {normalize, denormalizeForSupport} from './src/valid.js';
+import {normalizeForStorage} from './task/server.js';
+
+const {suite, test, assert} = self;
 
 // TODO(samthor): We don't support being run on the command-line. Update headless-test.
 
@@ -97,6 +100,35 @@ suite('normalize', () => {
     assert.equal(normalize('🎅🏼').s, '🧑‍🎄', 'santa should revert to mx claus');
     assert.equal(denormalizeForSupport('🧑‍🎄', 13), '🧑‍🎄', 'version 13 supports this');
     assert.notEqual(denormalizeForSupport('🧑‍🎄', 12), '🧑‍🎄', 'version 12 does not support mx claus');
+  });
+
+  test('removed', () => {
+    assert.equal(denormalizeForSupport('🪃', 13), '🪃', 'unicode 13 should retain boomerang');
+    assert.equal(denormalizeForSupport('🪃', 12), '', 'unicode 12 should remove boomerang');
+  });
+});
+
+suite('server', () => {
+  test('normalizeForStorage', () => {
+    const tests = {
+      '🐻‍❄️': ['\u{1f43b}\u{2744}'],
+      '🐻‍❄️🐻‍❄️': ['\u{1f43b}\u{2744}', '\u{1f43b}\u{2744}'],
+      '⚧️': ['\u{26a7}'],
+      '🏳️‍⚧️🏳️‍🌈': ['\u{1f3f3}\u{26a7}', '\u{1f3f3}\u{1f308}'],
+      '\u{af3f9}': [],  // unknown/invalid
+      '🇨🇬abc🇨🇬': ['🇨🇬', '🇨🇬'],
+      '\u{1f6bd}\u{200d}\u{1f6bd}': [],  // toilet cannot combine with toilet
+      '👸🏽': ['\u{1f9d1}\u{1f451}'],
+      '👩🏾‍🤝‍👨🏻': ['\u{1f9d1}\u{1f91d}\u{1f9d1}'],  // TODO
+    };
+
+    Object.keys(tests).forEach((raw) => {
+      const expected = tests[raw];
+      if (raw === '👸🏽') {
+        debugger;
+      }
+      assert.deepEqual(normalizeForStorage(raw), expected);
+    });
   });
 });
 

@@ -226,7 +226,7 @@ function internalSinglePart(out, points, i) {
 
   // we don't know about keycap variants on their own, just apply if used as keycap
   if (next === helper.runeKeycap) {
-    out.push(helper.runeVS16)
+    out.push(helper.runeVS16);
     out.push(next);
     return i + 1;
   }

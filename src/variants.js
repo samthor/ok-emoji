@@ -77,6 +77,7 @@ const genderVariantSource = extraBasesSource.concat([
   0, 0x1f478, 0x1f934,  // princess, prince
   0, 0x1f930, 0,        // pregnant woman
   0, 0x1f9d5, 0,        // woman with headscarf
+  0, 0, 0x1f9d4,        // man: beard
 ]);
 const genderVariant = buildSourceMap(genderVariantSource);
 

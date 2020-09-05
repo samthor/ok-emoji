@@ -22,6 +22,8 @@ export const runeHeart = 0x2764;
 export const runeKiss = 0x1f48b;
 export const runeHolidayTree = 0x1f384;
 export const runeNuclearFamily = 0x1f46a;
+export const runeCrown = 0x1f451;
+export const runeMusicalNotes = 0x1f3b6;
 
 export function isFlagPoint(r) {
   return r >= runeFlagA && r <= runeFlagZ;

@@ -13,6 +13,10 @@
 </style>
 <script type="module">
 
+import determineEmojiSupport from './src/version.js';
+
+console.info('emoji support', determineEmojiSupport());
+
 import * as encoding from './src/encoding.js';
 import * as variants from './src/variants.js';
 import * as expando from './src/expando.js';

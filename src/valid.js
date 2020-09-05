@@ -6,18 +6,27 @@ import {
   multi as multiSource,
   parts as partsSource,
   professions as professionsSource,
+  unicode12,
+  unicode13,
 } from './raw/defs.js';
 import {singleBase} from './variants.js';
-import { isFlag } from './flags.js';
+import {isFlag} from './flags.js';
 
-const multiSet = new Set();
-const multiAll = split(multiSource);
-multiAll.forEach((points) => {
-  multiSet.add(single(points));
-});
+const buildStringHas = (source, ...extra) => {
+  const data = split(source).map(single);
+  const s = /** @type {!Set<string>} */ (new Set(data));
+  extra.forEach((e) => s.add(e));
+  return (check) => s.has(check);
+};
+
+const unicode12Has = buildStringHas(unicode12);
+const unicode13Has = buildStringHas(unicode13);
 
 // nb. add base "shaking hands" as it's not otherwise included (part of weird assembly)
-multiSet.add(single([helper.runePerson, helper.runeHandshake, helper.runePerson]));
+const multiHas = buildStringHas(
+    multiSource,
+    single([helper.runePerson, helper.runeHandshake, helper.runePerson]),
+);
 
 const partsSet = new Set(Array.from(jsdecode(partsSource)));
 
@@ -58,7 +67,7 @@ export function normalize(raw) {
     }
 
     const joined = single(part);
-    if (multiSet.has(joined)) {
+    if (multiHas(joined)) {
       return true;  // return early as e.g. "KEYCAP ONE" is valid but its parts are not
     }
 
@@ -87,7 +96,14 @@ outer:
 }
 
 /**
- * Denormalizes the passed emoji for old versions of the emoji spec.
+ * Denormalizes the passed emoji for old versions of the emoji spec. This is non-determinstic as it
+ * returns random genders where neutral ones were impossible.
+ *
+ * This removes emoji we know were introduced in later versions. It doesn't modify emoji we don't
+ * know about. (This is different to old code, which measured everything.)
+ *
+ * TODO(samthor): This isn't super useful for restricting variants as it just spews out more things.
+ * We could just remove any emoji that _changes_, but ugh.
  *
  * @param {string} raw
  * @param {number} version integer version (assumes all minors, e.g., 12 => 12.1)
@@ -99,34 +115,48 @@ export function denormalizeForSupport(raw, version=13) {
   }
 
   // this only effects people heads
-  const check = String.fromCodePoint(helper.runePerson, helper.runeZWJ);
-  if (raw.indexOf(check) === -1) {
-    return raw;
-  }
+  // const check = String.fromCodePoint(helper.runePerson, helper.runeZWJ);
+  // if (raw.indexOf(check) === -1) {
+  //   return raw;
+  // }
 
   const rewriter = (part) => {
-    if (part[0] !== helper.runePerson) {
+    // TODO: when this was just rewriting, it only needed people
+    // if (part[0] !== helper.runePerson) {
+    //   return part;
+    // }
+    if (version >= 13) {
       return part;
     }
 
+    const s = single(part);
+
     // overrides for Emoji 13
     if (version < 13) {
-      if (part.length === 2 && part[1] === helper.runeHolidayTree) {
+      if (part.length === 2 && part[0] === helper.runePerson && part[1] === helper.runeHolidayTree) {
         // "MX CLAUS" to m or f
         return [choiceFromOptions(0x1f385, 0x1f936)];
+      }
+      if (unicode13Has(s)) {
+        return [];
       }
     }
 
     // overrides for Emoji 12
     if (version < 12) {
-      if (part.length === 3 && part[1] === helper.runeHandshake && part[2] === helper.runePerson) {
+      if (part.length === 3 && part[0] === helper.runePerson && part[1] === helper.runeHandshake && part[2] === helper.runePerson) {
         // "PEOPLE HOLDING HANDS" map to mm, fm, or ff
         return [choiceFromOptions(0x1f46d, 0x1f46b, 0x1f46c)];
       }
 
       // don't override "PERSON FEEDING BABY", all genders added in 13.0
-      if (part.length === 2 && part[1] !== 0x1f37c) {
+      // TODO(samthor): as we run unicode13Has above, this should never actually get here?
+      if (part.length === 2 && part[0] === helper.runePerson && part[1] !== 0x1f37c) {
         return [choiceFromOptions(helper.runePersonMan, helper.runePersonWoman), part[1]];
+      }
+
+      if (unicode12Has(s)) {
+        return [];
       }
     }
 
