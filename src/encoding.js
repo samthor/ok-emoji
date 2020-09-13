@@ -29,6 +29,14 @@ import * as helper from './helper.js';
 const variationSet = new Set(jsdecode(variationSource));
 
 /**
+ * @param {number} rune to check
+ * @return {boolean} whether this needs to be trailed by a VS16
+ */
+export function isVariation(rune) {
+  return variationSet.has(rune);
+}
+
+/**
  * @param {string} raw to split
  * @return {!Array<!Array<number>>} split emoji string
  */

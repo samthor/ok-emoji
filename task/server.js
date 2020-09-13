@@ -1,4 +1,4 @@
-import {iterate, split, join} from '../src/encoding.js'
+import {iterate, split, join, isVariation, single} from '../src/encoding.js'
 import {
   parts as partsSource,
   multi as multiSource,
@@ -19,9 +19,10 @@ const professionsSet = new Set(Array.from(jsdecode(professionsSource)));
 [helper.runeCrown, helper.runeMusicalNotes].forEach((extra) => professionsSet.add(extra));
 
 // ZWJ emoji. This is actually not canonical emoji, it just contains runes slammed together.
-// Add person group cases (holding hands, kiss).
+// Add person group cases (holding hands, heart, kiss).
 const multiSet = new Set(split(multiSource).map((points) => String.fromCodePoint.apply(null, points)));
 multiSet.add(String.fromCodePoint(helper.runePerson, helper.runeHandshake, helper.runePerson));
+multiSet.add(String.fromCodePoint(helper.runePerson, helper.runeHeart, helper.runePerson));
 multiSet.add(String.fromCodePoint(helper.runePerson, helper.runeHeart, helper.runeKiss, helper.runePerson));
 
 const singleBaseSource = [
@@ -43,7 +44,7 @@ for (let i = 0; i < singleBaseSource.length; i += 3) {
  * @param {number} point
  * @return {string} server string (no VS16 etc)
  */
-function normalizePoint(point) {
+function internalNormalizePoint(point) {
   if (helper.isGender(point) || helper.isToneModifier(point)) {
     return 0;
   }
@@ -70,12 +71,12 @@ function normalizeSingle(points) {
   }
 
   // Match family and return "NUCLEAR FAMILY".
-  if (points.length > 2 && helper.isFamilyMember(points[0]) && helper.isFamilyMember(points[1])) {
+  if (points.length >= 2 && helper.isFamilyMember(points[0]) && helper.isFamilyMember(points[1])) {
     return '\u{1f46a}';
   }
 
   // Normalize all points, removing gender and other options.
-  points = points.map(normalizePoint).filter((x) => x !== 0);
+  points = points.map(internalNormalizePoint).filter((x) => x !== 0);
   if (points.length === 0) {
     return '';
   }
@@ -83,35 +84,33 @@ function normalizeSingle(points) {
   // Check validity of ZWJ'ed emoji.
   if (points.length !== 1) {
     if (points.length === 2 && points[0] === helper.runePerson && professionsSet.has(points[1])) {
-      return String.fromCodePoint(points[0], points[1]);
+      return single(points);
     }
-    const cand = String.fromCodePoint.apply(null, points);
-    if (multiSet.has(cand)) {
-      return cand;
+    const check = String.fromCodePoint.apply(null, points);
+    if (multiSet.has(check)) {
+      return single(points);  // cand is just points stuck together, really format it here
     }
     return '';
   }
 
   // Match expandos (old single rune to multiple). At this point we have no gender/tone points
   // so the expando code won't retain it. All expandos are considered valid.
-  let cand = [points[0]];
-  if (expando(cand)) {
-    cand = cand.map(normalizePoint);  // expandos have gender
-    return String.fromCodePoint.apply(null, cand);
+  if (expando(points)) {
+    points = points.map(internalNormalizePoint);  // expandos include explicit gender
+    return single(points);
   }
 
   // We have a single, successful point. Let's see if it's even a valid part at all.
   if (partsSet.has(points[0])) {
-    return String.fromCodePoint(points[0]);
+    return single(points);
   }
 
   return '';
 }
 
 /**
- * Normalizes completely untrusted user data. Not designed to be run in a user's browser.
- *
- * Returns runs of emoji as a string, but not a formatted string: doesn't contain ZWJs or VS16s.
+ * Normalizes completely untrusted user data. Not designed to be run in a user's browser. Returns a
+ * formatted emoji, including ZWJs and VS16s as needed.
  *
  * This updates the passed emoji, removing non-emoji characters, as well as stripping gender and
  * skin tone. It also removes unknown ZWJ'ed emoji, but expandos old-style single points into
@@ -125,8 +124,8 @@ function normalizeSingle(points) {
  * In the second case, this matches an older discussion, which while out-of-date, lists this option
  * directly adjacent to the above "CROWN" suggestion (https://www.unicode.org/L2/L2019/19231-gendered-emoji-rec.pdf).
  *
- * However, importantly, emoji is a living standard, so the output normalization may change or
- * improve over time.
+ * Importantly, emoji is a living standard, so the output normalization may change or improve over
+ * time.
  *
  * @param {string} raw
  * @return {!Array<string>}
