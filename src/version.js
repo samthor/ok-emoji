@@ -31,27 +31,32 @@ function internalDetermine(widthHelper) {
   ];
   const countSupport13 = check13.filter((x) => x).length;
   if (countSupport13 >= 2) {
-    return 13;
+    return 130;
   }
 
-  // check "SERVICE DOG" and "JUDGE" (non-gendered)
-  if (zwjSupported('🐕‍🦺') && zwjSupported('🧑‍⚖️')) {
-    return 12;  // nb. actually E12.1, but who's counting
+  // check "JUDGE" and "PERSON: RED HAIR" (non-gendered)
+  if (zwjSupported('🧑‍⚖️') && zwjSupported("🧑‍🦰")) {
+    return 121;
+  }
+
+  // check "SERVICE DOG" and "WOMAN IN MOTORIZED WHEELCHAIR: DARK SKIN TONE"
+  if (zwjSupported('🐕‍🦺') && zwjSupported("👩🏿‍🦼")) {
+    return 120;
   }
 
   // check "WOMAN: CURLY HAIR" and "LEG: DARK SKIN TONE"
   if (zwjSupported('👩‍🦱') && zwjSupported('🦵🏿')) {
-    return 11;
+    return 110;
   }
 
   // check "WOMAN IN LOTUS POSITION: MEDIUM SKIN TONE"
   if (zwjSupported('🧘🏽‍♀️')) {
-    return 5;
+    return 50;
   }
 
   // check "TRANSGENDER FLAG"
   if (zwjSupported('🏳‍🌈')) {
-    return 4;
+    return 40;
   }
 
   // at some point, it's not useful to continue

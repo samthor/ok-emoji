@@ -106,11 +106,11 @@ outer:
  * We could just remove any emoji that _changes_, but ugh.
  *
  * @param {string} raw
- * @param {number} version integer version (assumes all minors, e.g., 12 => 12.1)
+ * @param {number} version integer version including minor (e.g. 13.0 => 130)
  * @return {string}
  */
-export function denormalizeForSupport(raw, version=13) {
-  if (version >= 13) {
+export function denormalizeForSupport(raw, version=130) {
+  if (version >= 130) {
     return raw;
   }
 
@@ -125,14 +125,14 @@ export function denormalizeForSupport(raw, version=13) {
     // if (part[0] !== helper.runePerson) {
     //   return part;
     // }
-    if (version >= 13) {
+    if (version >= 130) {
       return part;
     }
 
     const s = single(part);
 
     // overrides for Emoji 13
-    if (version < 13) {
+    if (version < 130) {
       if (part.length === 2 && part[0] === helper.runePerson && part[1] === helper.runeHolidayTree) {
         // "MX CLAUS" to m or f
         return [choiceFromOptions(0x1f385, 0x1f936)];
@@ -143,7 +143,7 @@ export function denormalizeForSupport(raw, version=13) {
     }
 
     // overrides for Emoji 12
-    if (version < 12) {
+    if (version < 120) {
       if (part.length === 3 && part[0] === helper.runePerson && part[1] === helper.runeHandshake && part[2] === helper.runePerson) {
         // "PEOPLE HOLDING HANDS" map to mm, fm, or ff
         return [choiceFromOptions(0x1f46d, 0x1f46b, 0x1f46c)];

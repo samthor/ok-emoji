@@ -133,9 +133,6 @@ function normalizeSingle(points) {
 export function normalizeForStorage(raw) {
   const out = [];
 
-  // Note that iterate/join don't care at all about expando, variants or validity. They just split
-  // according to known emoji rules.
-
   for (const initial of iterate(raw)) {
     const update = normalizeSingle(initial);
     if (update.length !== 0) {

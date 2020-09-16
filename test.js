@@ -4,6 +4,7 @@ import {supported} from './src/measure.js';
 import {singleBase, genderVariants, supportsDoubleTone, supportsTone} from './src/variants.js';
 import {normalize, denormalizeForSupport} from './src/valid.js';
 import {normalizeForStorage} from './task/server.js';
+import {restoreForClient} from './task/client.js';
 
 const {suite, test, assert} = self;
 
@@ -98,13 +99,13 @@ suite('variations', () => {
 suite('normalize', () => {
   test('santa', () => {
     assert.equal(normalize('🎅🏼').s, '🧑‍🎄', 'santa should revert to mx claus');
-    assert.equal(denormalizeForSupport('🧑‍🎄', 13), '🧑‍🎄', 'version 13 supports this');
-    assert.notEqual(denormalizeForSupport('🧑‍🎄', 12), '🧑‍🎄', 'version 12 does not support mx claus');
+    assert.equal(denormalizeForSupport('🧑‍🎄', 130), '🧑‍🎄', 'version 13 supports this');
+    assert.notEqual(denormalizeForSupport('🧑‍🎄', 120), '🧑‍🎄', 'version 12 does not support mx claus');
   });
 
   test('removed', () => {
-    assert.equal(denormalizeForSupport('🪃', 13), '🪃', 'unicode 13 should retain boomerang');
-    assert.equal(denormalizeForSupport('🪃', 12), '', 'unicode 12 should remove boomerang');
+    assert.equal(denormalizeForSupport('🪃', 130), '🪃', 'unicode 13 should retain boomerang');
+    assert.equal(denormalizeForSupport('🪃', 120), '', 'unicode 12 should remove boomerang');
   });
 });
 
@@ -130,6 +131,25 @@ suite('server', () => {
       const expected = tests[raw];
       assert.deepEqual(normalizeForStorage(raw), expected);
     });
+  });
+});
+
+suite('client', () => {
+  test('restoreForClient', () => {
+    assert.equal(restoreForClient('🧑‍🎄', 130), '🧑‍🎄', 'version 13 supports this');
+    assert.oneOf(restoreForClient('🧑‍🎄', 120), ['🎅', '🤶'], 'version 12 does not support mx claus');
+
+    assert.equal(restoreForClient('🦷🤍', 130), '🦷🤍');
+    assert.equal(restoreForClient('🦷🤍', 121), '🦷🤍');
+    assert.equal(restoreForClient('🦷🤍', 110), '🦷');
+    assert.equal(restoreForClient('🦷🤍', 50), '');
+    assert.equal(restoreForClient('🦸abc', 50), 'abc');
+
+    assert.equal(restoreForClient('🧑‍🦰', 130), '🧑‍🦰');
+    assert.oneOf(restoreForClient('🧑‍🦰', 120), ['👨‍🦰', '👩‍🦰']);
+    assert.equal(restoreForClient('🧑‍🦰', 50), '');
+
+    assert.equal(restoreForClient('🦸', 0), '🦸', 'zero version should make no changes');
   });
 });
 
