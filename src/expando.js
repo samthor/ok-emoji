@@ -55,6 +55,8 @@ for (let i = 0; i < simpleExpandoSource.length; i += 2) {
   const data = people.map((person, i) => {
     const from = source[i];
     if (from !== 0) {
+      // single emoji mapped to person type + profession (e.g., "SANTA" => "MAN" "HOLIDAY TREE")
+      // some are missing (e.g., no "MX CLAUS" expando)
       expandos.set(from, [person, profession]);
     }
     return from;

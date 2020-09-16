@@ -1,4 +1,4 @@
-import {iterate, split, join, isVariation, single} from '../src/encoding.js'
+import {iterate, split, single} from '../src/encoding.js'
 import {
   parts as partsSource,
   multi as multiSource,
@@ -114,7 +114,7 @@ function normalizeSingle(points) {
  *
  * This updates the passed emoji, removing non-emoji characters, as well as stripping gender and
  * skin tone. It also removes unknown ZWJ'ed emoji, but expandos old-style single points into
- * their longer form (e.g. "SANTA" => "MAN" "ZWJ" "HOLIDAY TREE").
+ * their longer form (e.g., "SANTA" => "MAN" "ZWJ" "HOLIDAY TREE").
  *
  * There's also two emoji we map to potential/invalid runs to remove gender:
  *   "PRINCESS" and "PRINCE" => "PERSON" "CROWN"
@@ -138,7 +138,7 @@ export function normalizeForStorage(raw) {
 
   for (const initial of iterate(raw)) {
     const update = normalizeSingle(initial);
-    if (update.length) {
+    if (update.length !== 0) {
       out.push(update);
     }
   }
