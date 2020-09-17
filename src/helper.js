@@ -52,3 +52,30 @@ export function isGender(r) {
 export function isTagRune(r) {
   return r >= runeTagSpace && r <= runeTagCancel;
 }
+
+/**
+ * @param {!Array<number>} p points to check
+ * @return {boolean} whether this is a person group (not a Family)
+ */
+export function isPersonGroup(p) {
+  if (p.length <= 2) {
+    return false;
+  }
+  let count = 0;
+  for (const point of p) {
+    if (isGenderPerson(point)) {
+      ++count;
+    }
+  }
+  // for now, these always have two people
+  return count === 2;
+}
+
+/**
+ * @param {!Array<number>} p points to check
+ * @return {boolean} whether this is a Family
+ */
+export function isFamilyPoints(p) {
+  // TODO: supports skin tone in future
+  return p.length >= 2 && isFamilyMember(p[0]) && isFamilyMember(p[1]);
+}

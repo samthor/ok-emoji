@@ -8,7 +8,7 @@ import {isFlag} from '../src/flags.js';
 import * as helper from '../src/helper.js';
 import {jsdecode} from '../src/string.js';
 import {expando} from '../src/expando.js';
-
+import {normalizePointAll} from '../src/normalize.js';
 
 
 // Valid parts. Contains most things.
@@ -24,36 +24,6 @@ const multiSet = new Set(split(multiSource).map((points) => String.fromCodePoint
 multiSet.add(String.fromCodePoint(helper.runePerson, helper.runeHandshake, helper.runePerson));
 multiSet.add(String.fromCodePoint(helper.runePerson, helper.runeHeart, helper.runePerson));
 multiSet.add(String.fromCodePoint(helper.runePerson, helper.runeHeart, helper.runeKiss, helper.runePerson));
-
-const singleBaseSource = [
-  helper.runePerson, helper.runePersonWoman, helper.runePersonMan,
-  0x1f9d2, 0x1f467, 0x1f466,  // child, girl, boy
-  0x1f9d3, 0x1f475, 0x1f474,  // old {adult,woman,man}
-];
-
-const singleBase = new Map();
-for (let i = 0; i < singleBaseSource.length; i += 3) {
-  const base = singleBaseSource[i+0];
-  singleBase.set(singleBaseSource[i+1], base);
-  singleBase.set(singleBaseSource[i+2], base);
-}
-
-/**
- * Normalizes a single point. Used as a helper below.
- *
- * @param {number} point
- * @return {string} server string (no VS16 etc)
- */
-function internalNormalizePoint(point) {
-  if (helper.isGender(point) || helper.isToneModifier(point)) {
-    return 0;
-  }
-  const base = singleBase.get(point);
-  if (base !== undefined) {
-    return base;
-  }
-  return point;
-}
 
 /**
  * Normalizes a single emoji run. Returns a server string (no VS16 etc), possibly the empty string.
@@ -76,7 +46,7 @@ function normalizeSingle(points) {
   }
 
   // Normalize all points, removing gender and other options.
-  points = points.map(internalNormalizePoint).filter((x) => x !== 0);
+  points = points.map(normalizePointAll).filter((x) => x !== 0);
   if (points.length === 0) {
     return '';
   }
@@ -96,7 +66,7 @@ function normalizeSingle(points) {
   // Match expandos (old single rune to multiple). At this point we have no gender/tone points
   // so the expando code won't retain it. All expandos are considered valid.
   if (expando(points)) {
-    points = points.map(internalNormalizePoint);  // expandos include explicit gender
+    points = points.map(normalizePointAll);  // expandos include explicit gender
     return single(points);
   }
 

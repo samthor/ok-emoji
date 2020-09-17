@@ -82,39 +82,13 @@ const genderVariantSource = extraBasesSource.concat([
 const genderVariant = buildSourceMap(genderVariantSource);
 
 /**
- * @param {!Array<number>} p points to check
- * @return {boolean} whether this is a Family
- */
-function isFamilyPoints(p) {
-  return p.length >= 2 && helper.isFamilyMember(p[0]) && helper.isFamilyMember(p[1]);
-}
-
-/**
- * @param {!Array<number>} p points to check
- * @return {boolean} whether this is a person group (not a Family)
- */
-function isPersonGroup(p) {
-  if (p.length <= 2) {
-    return false;
-  }
-  let count = 0;
-  for (const point of p) {
-    if (helper.isGenderPerson(point)) {
-      ++count;
-    }
-  }
-  // for now, these always have two people
-  return count === 2;
-}
-
-/**
  * Returns the base emoji for the given single emoji. This assumes input is already expando'ed.
  *
  * @param {!Array<number>} points already expando'ed points
  * @return {!Array<number>}
  */
 function internalSingleBase(points) {
-  if (isFamilyPoints(points)) {
+  if (helper.isFamilyPoints(points)) {
     return [helper.runeNuclearFamily];  // generic nuclear family
   }
   const out = points.map((point) => {
@@ -278,12 +252,12 @@ export function supportsTone(points) {
     // We don't expando this, as modifierBase also contains the top-level weird cases (including
     // double "holding hands" cases).
     return modifierBase.has(points[0]);
-  } else if (isPersonGroup(points)) {
+  } else if (helper.isPersonGroup(points)) {
     // People are in the list of modifiers, but when used as a group, only "holding hands" supports
     // skin tone modification (it also supports double, see below).
     return points.includes(helper.runeHandshake);
   }
-  return !isFamilyPoints(points);
+  return !helper.isFamilyPoints(points);
 }
 
 /**
@@ -296,5 +270,5 @@ export function supportsDoubleTone(points) {
   // look for non-expandoed holding hands cases plus real one
   // this is "WOMEN HOLDING HANDS", "MEN HOLDING HANDS", and "WOMAN AND MAN HOLDING HANDS"
   return (points[0] >= 0x1f46b && points[0] <= 0x1f46d) ||
-      (isPersonGroup(points) && points.includes(helper.runeHandshake));
+      (helper.isPersonGroup(points) && points.includes(helper.runeHandshake));
 }

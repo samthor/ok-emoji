@@ -1,10 +1,10 @@
 
 import {split, single, iterate} from './src/encoding.js';
 import {supported} from './src/measure.js';
-import {singleBase, genderVariants, supportsDoubleTone, supportsTone} from './src/variants.js';
+// import {singleBase, genderVariants, supportsDoubleTone, supportsTone} from './src/variants.js';
 import {normalize, denormalizeForSupport} from './src/valid.js';
 import {normalizeForStorage} from './task/server.js';
-import {restoreForClient} from './task/client.js';
+import {restoreForClient, supportsTone, genderVariants} from './task/client.js';
 
 const {suite, test, assert} = self;
 
@@ -56,45 +56,45 @@ suite('encoding', () => {
   });
 });
 
-suite('variations', () => {
-  test('base', () => {
-    assert.deepEqual(singleBase([0x1f385, 0x1f3fd]), [0x1f9d1, 0x1f384], 'santa => mx claus');
-    assert.deepEqual(singleBase([0x1f994]), [0x1f994], 'hedgehog => hedgehog');
-    assert.deepEqual(singleBase([0x1f466, 0x1f3fd]), [0x1f9d2], 'boy => child');
+// suite('variations', () => {
+//   test('base', () => {
+//     assert.deepEqual(singleBase([0x1f385, 0x1f3fd]), [0x1f9d1, 0x1f384], 'santa => mx claus');
+//     assert.deepEqual(singleBase([0x1f994]), [0x1f994], 'hedgehog => hedgehog');
+//     assert.deepEqual(singleBase([0x1f466, 0x1f3fd]), [0x1f9d2], 'boy => child');
 
-    const handsBase = [0x1f9d1, 0x1f91d, 0x1f9d1];
-    assert.deepEqual(singleBase([0x1f46d, 0x1f3ff]), handsBase, 'women => people holding hands');
-    assert.deepEqual(singleBase([0x1f469, 0x1f91d, 0x1f468]), handsBase, 'invalid expando\'ed holding hands => base');
-    assert.deepEqual(singleBase([0x1f468, 0x1f91d, 0x1f469]), handsBase, 'invalid m/f holding hands => base');
-  });
+//     const handsBase = [0x1f9d1, 0x1f91d, 0x1f9d1];
+//     assert.deepEqual(singleBase([0x1f46d, 0x1f3ff]), handsBase, 'women => people holding hands');
+//     assert.deepEqual(singleBase([0x1f469, 0x1f91d, 0x1f468]), handsBase, 'invalid expando\'ed holding hands => base');
+//     assert.deepEqual(singleBase([0x1f468, 0x1f91d, 0x1f469]), handsBase, 'invalid m/f holding hands => base');
+//   });
 
-  test('variants', () => {
-    const miscFamily = iterate('👨‍👩‍👧‍👧').next().value;
-    const familyVariants = genderVariants(miscFamily);
-    assert.lengthOf(Object.keys(familyVariants), 26, 'family has 25 variants + neutral');
+//   test('variants', () => {
+//     const miscFamily = iterate('👨‍👩‍👧‍👧').next().value;
+//     const familyVariants = genderVariants(miscFamily);
+//     assert.lengthOf(Object.keys(familyVariants), 26, 'family has 25 variants + neutral');
 
-    // technologist
-    assert.deepEqual(genderVariants([0x1f468, 0x1f3fd, 0x1f4bb]), {
-      'n': [0x1f9d1, 0x1f4bb],
-      'f': [0x1f469, 0x1f4bb],
-      'm': [0x1f468, 0x1f4bb],
-    });
+//     // technologist
+//     assert.deepEqual(genderVariants([0x1f468, 0x1f3fd, 0x1f4bb]), {
+//       'n': [0x1f9d1, 0x1f4bb],
+//       'f': [0x1f469, 0x1f4bb],
+//       'm': [0x1f468, 0x1f4bb],
+//     });
 
-    assert.isTrue(supportsTone([0x1f468, 0x1f4bb]));
-    assert.isFalse(supportsDoubleTone([0x1f468, 0x1f4bb]));
+//     assert.isTrue(supportsTone([0x1f468, 0x1f4bb]));
+//     assert.isFalse(supportsDoubleTone([0x1f468, 0x1f4bb]));
 
-    assert.isTrue(supportsTone([0x1f46d]));
-    assert.isTrue(supportsDoubleTone([0x1f46d]));
+//     assert.isTrue(supportsTone([0x1f46d]));
+//     assert.isTrue(supportsDoubleTone([0x1f46d]));
 
-    assert.isFalse(supportsTone([0x1f30b, 0x1f4bb]), 'should not support tone just because tone passed');
+//     assert.isFalse(supportsTone([0x1f30b, 0x1f4bb]), 'should not support tone just because tone passed');
 
-    // only f/m
-    assert.deepEqual(genderVariants([0x1f57a]), {
-      'f': [0x1f483],
-      'm': [0x1f57a],
-    });
-  });
-});
+//     // only f/m
+//     assert.deepEqual(genderVariants([0x1f57a]), {
+//       'f': [0x1f483],
+//       'm': [0x1f57a],
+//     });
+//   });
+// });
 
 suite('normalize', () => {
   test('santa', () => {
@@ -139,17 +139,29 @@ suite('client', () => {
     assert.equal(restoreForClient('🧑‍🎄', 130), '🧑‍🎄', 'version 13 supports this');
     assert.oneOf(restoreForClient('🧑‍🎄', 120), ['🎅', '🤶'], 'version 12 does not support mx claus');
 
-    assert.equal(restoreForClient('🦷🤍', 130), '🦷🤍');
-    assert.equal(restoreForClient('🦷🤍', 121), '🦷🤍');
-    assert.equal(restoreForClient('🦷🤍', 110), '🦷');
-    assert.equal(restoreForClient('🦷🤍', 50), '');
-    assert.equal(restoreForClient('🦸abc', 50), 'abc');
+    assert.equal(restoreForClient('🦷🤍', 130), '🦷🤍', 'version 13');
+    assert.equal(restoreForClient('🦷🤍', 121), '🦷🤍', 'version 12.1');
+    assert.equal(restoreForClient('🦷🤍', 110), '🦷', 'version 11');
+    assert.equal(restoreForClient('🦷🤍', 50), '', 'version 5 supports nothing');
+    assert.equal(restoreForClient('🦸abc', 50), 'abc', 'version 5 removes superhero');
 
-    assert.equal(restoreForClient('🧑‍🦰', 130), '🧑‍🦰');
-    assert.oneOf(restoreForClient('🧑‍🦰', 120), ['👨‍🦰', '👩‍🦰']);
-    assert.equal(restoreForClient('🧑‍🦰', 50), '');
+    assert.equal(restoreForClient('🧑‍🦰', 130), '🧑‍🦰', 'hair support in 13');
+    assert.oneOf(restoreForClient('🧑‍🦰', 120), ['👨‍🦰', '👩‍🦰'], 'no neuter hair in 12');
+    assert.equal(restoreForClient('🧑‍🦰', 50), '', 'no hair in 5');
 
     assert.equal(restoreForClient('🦸', 0), '🦸', 'zero version should make no changes');
+  });
+
+  test('supportsTone', () => {
+    assert.equal(supportsTone('🧑‍🎄'), 1);
+  });
+
+  test('genderVariants', () => {
+    assert.deepEqual(genderVariants('👩🏾‍🍼', 130), {
+      f: "👩‍🍼",
+      m: "👨‍🍼",
+      n: "🧑‍🍼",
+    });
   });
 });
 

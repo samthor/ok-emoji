@@ -36,7 +36,7 @@ const complexExpandoSource = [
 const simpleExpandoSource = [
   [0, expandoMrsClaus, expandoSantaClaus], helper.runeHolidayTree,
   [0, expandoPrincess, expandoPrince], helper.runeCrown,
-  [0, expandoWomanDancing, expandoManDancing, 0], helper.runeMusicalNotes,
+  [0, expandoWomanDancing, expandoManDancing], helper.runeMusicalNotes,
 ];
 
 const expandos = new Map();

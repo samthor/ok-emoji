@@ -1,11 +1,28 @@
-import {split, single} from '../src/encoding.js';
-import {deexpando} from '../src/expando.js';
+import {split, single, iterate, join} from '../src/encoding.js';
+import {deexpando, expando} from '../src/expando.js';
 import * as helper from '../src/helper.js';
 import {
   unicode11,
   unicode12,
   unicode13,
+  modifierBase as modifierBaseSource,
+  roles as rolesSource,
 } from '../src/raw/defs.js';
+import {jsdecode} from '../src/string.js';
+import {normalizePointAll} from '../src/normalize.js';
+
+const roles = new Set();
+jsdecode(rolesSource).forEach((role) => roles.add(role));
+
+const modifierBase = new Set();
+jsdecode(modifierBaseSource).forEach((b) => modifierBase.add(b));
+
+// Remove both "kiss" and "couple with heart". The emoji test data (and vendor implementations) are
+// ambiguous as to whether this is supported.
+//  * These aren't expanded in "emoji-test.txt", but are listed in "emoji-data.txt"
+//  * Only Microsoft supports the modifier, although macOS often eats the tone silently
+modifierBase.delete(0x1f48f);
+modifierBase.delete(0x1f491);
 
 export {default as determineEmojiSupport} from '../src/version.js';
 
@@ -72,7 +89,7 @@ export function restoreForClient(raw, version) {
           return '';  // no hair emoji supported
         }
         const p = choiceFromOptions(helper.runePersonWoman, helper.runePersonMan);
-        return String.fromCodePoint(p, '\u{200d}', part[1]);
+        return String.fromCodePoint(p, 0x200d, part[1]);
       }
     }
 
@@ -86,6 +103,8 @@ export function restoreForClient(raw, version) {
     if (version >= 121) {
       return s;
     }
+
+    // TODO: E12.1 added a ton of gendered folks, should only include from there
 
     // neutral "PEOPLE HOLDING HANDS" added in 12.1
     if (part.length === 3 && part[0] === helper.runePerson && part[1] === helper.runeHandshake && part[2] === helper.runePerson) {
@@ -106,6 +125,148 @@ export function restoreForClient(raw, version) {
   };
 
   return split(raw).map(rewriter).join('');
+}
+
+/**
+ * @param {string} raw
+ * @param {number} version
+ * @return {!Object<string, string>}
+ */
+export function genderVariants(raw, version) {
+
+  // TODO: 
+  //  * no neuter hair in E11
+  //  * no "person with white cane", "person in motorized wheelchair", "person in manual wheelchair", until E12.1
+  //  * no gendered tuxedo/bride until E13
+
+
+  const build = (part) => {
+    part = part.slice();
+    expando(part);
+
+    part = part.map(normalizePointAll).filter((x) => x !== 0);
+    if (part.length === 0) {
+      return [];
+    }
+
+    if (part.length === 1) {
+      const only = part[0];
+      if (roles.has(only)) {
+        return {
+          'n': [only],
+          'f': [only, helper.runeGenderFemale],
+          'm': [only, helper.runeGenderMale],
+        };
+      }
+
+      // nothing else to do since we were expando'ed
+      return null;
+    }
+
+    // All other variants should start with runePerson.
+    if (part[0] !== helper.runePerson) {
+      return null;
+    }
+
+    const peopleAt = [0];
+    for (let i = 1; i < part.length; ++i) {
+      if (part[i] === helper.runePerson) {
+        peopleAt.push(i);
+      }
+    }
+
+    if (peopleAt.length === 1) {
+      // Person is at 0th position.
+
+      const f = part.slice();
+      f[0] = helper.runePersonWoman;
+      const wasExpando = deexpando(f);
+
+      const m = part.slice();
+      m[0] = helper.runePersonMan;
+      wasExpando && deexpando(m);  // don't try again if we didn't hit before
+
+      return {
+        'n': part, f, m,
+      };
+    }
+
+    // TODO: paired gender emojis
+
+    return null;
+  };
+
+  const empty = {};
+  const uniques = new Set();
+  const all = [];
+  for (const part of iterate(raw)) {
+    const out = build(part) || empty;
+
+    for (const option in out) {
+      uniques.add(option);
+    }
+
+    all.push({part, out});
+  }
+
+  if (!uniques.size) {
+    return {};
+  }
+
+  const uniqueArray = [...uniques];
+  uniqueArray.sort();
+
+  const final = {};
+  uniqueArray.forEach((each) => final[each] = []);
+
+  for (const {part, out} of all) {
+    uniqueArray.forEach((each) => {
+      final[each].push(out[each] || part);
+    });
+  }
+
+  const s = {};
+  uniqueArray.forEach((each) => s[each] = join(final[each]));
+  return s;
+}
+
+/**
+ * Does the passed raw emoji string support skin tones?
+ *
+ * @param {string} raw
+ * @param {number} version
+ * @return {number} number of tones supported
+ */
+export function supportsTone(raw, version) {
+  const check = (part) => {
+    if (!helper.isGenderPerson(part[0])) {
+      // We don't expando this, as modifierBase also contains the top-level old cases (including
+      // double "holding hands" cases).
+      return modifierBase.has(part[0]);
+    }
+    if (helper.isPersonGroup(part)) {
+      // People are in the list of modifiers, but when used as a group, only "holding hands" supports
+      // skin tone modification (it also supports double, see below).
+      return (version === 0 || version >= 120) && part.includes(helper.runeHandshake);
+    }
+    // Not if this is a family.
+    // TODO: future support
+    return !helper.isFamilyPoints(part);
+  };
+
+  // TODO: E12.0 added support for "x holding hands" tones vs the emoji itself
+  // TODO: E14.x+ might add handshake tones
+  for (const part of iterate(raw)) {
+    if (!check(part)) {
+      continue;
+    }
+    if ((part[0] >= 0x1f46b && part[0] <= 0x1f46d) ||
+        (helper.isPersonGroup(part) && part.includes(helper.runeHandshake))) {
+      return 2;
+    }
+    return 1;
+  }
+  return 0;
 }
 
 /**
