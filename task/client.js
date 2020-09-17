@@ -9,7 +9,7 @@ import {
   roles as rolesSource,
 } from '../src/raw/defs.js';
 import {jsdecode} from '../src/string.js';
-import {normalizePointAll} from '../src/normalize.js';
+import {normalizePointAll, normalizePointGender} from '../src/normalize.js';
 
 const roles = new Set();
 jsdecode(rolesSource).forEach((role) => roles.add(role));
@@ -144,7 +144,7 @@ export function genderVariants(raw, version) {
     part = part.slice();
     expando(part);
 
-    part = part.map(normalizePointAll).filter((x) => x !== 0);
+    part = part.map(normalizePointGender).filter((x) => x !== 0);
     if (part.length === 0) {
       return [];
     }
@@ -278,4 +278,108 @@ export function supportsTone(raw, version) {
 function choiceFromOptions(...arr) {
   const index = Math.floor(Math.random() * arr.length);
   return arr[index];
+}
+
+/**
+ * Returns the emoji which are different in the two strings. Used for gender comparisons and
+ * only operates on same-length strings.
+ *
+ * @param {string} from source string
+ * @param {string} to suggested replacement string
+ * @return {string} only different emoji in replacement string
+ */
+export function delta(from, to) {
+  const fi = split(from);
+  const ti = split(to);
+
+  if (fi.length !== ti.length) {
+    // This should probably never happen, but just return the output string in this case.
+    return to;
+  }
+
+  const eq = (a, b) => {
+    if (a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; ++i) {
+      if (a[i] !== b[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // TODO(samthor): It'd be nice if this only showed uniques.
+
+  const out = [];
+  while (fi.length && ti.length) {
+    const fn = fi.shift();
+    const tn = ti.shift();
+
+    if (!eq(fn, tn)) {
+      out.push(tn);
+    }
+  }
+
+  return join(out);
+}
+
+/**
+ * Normalizes the passed emoji, ensuring the right VS16 etc.
+ *
+ * @param {string} s
+ * @return {string}
+ */
+export function normalize(s) {
+  return join(split(s));
+}
+
+/**
+ * Apply the given skin tone, or none for zero.
+ *
+ * @param {string} raw
+ * @param {number} tone
+ * @return {string}
+ */
+export function applySkinTone(raw, tone) {
+  if (tone && !helper.isToneModifier(tone)) {
+    throw new Error('not a skinTone');
+  }
+  const out = [];
+
+  for (const e of iterate(raw)) {
+    // Family emoji seem like they could be toned (as they're a ZWJ of others that can also be),
+    // but they're officially unsupported. Don't explicitly clean them either.
+    if (helper.isFamilyPoints(e)) {
+      out.push(e);
+      continue;
+    }
+
+    const clean = e.filter((p) => !helper.isToneModifier(p));
+    if (!tone) {
+      out.push(clean);
+      continue;
+    }
+
+    // TODO: this splices skinTone everywhere, we should do one of two things:
+    // * if not 100% tones, set them all
+    // * if 100% applied already, set the first that does not match (double cases)
+    let personGroup = false;
+    for (let i = 0; i < clean.length; ++i) {
+      const check = clean[i];
+      if (helper.isGenderPerson(check)) {
+        personGroup = true;
+      } else if (personGroup || !modifierBase.has(check)) {
+        // If we're already a person group, don't modify anything but the people.
+        // If we're not in the modifier list, don't modify us.
+        continue;
+      }
+      clean.splice(i+1, 0, tone);
+      ++i;
+    }
+
+    out.push(clean);
+  }
+
+  return join(out);
 }

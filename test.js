@@ -4,7 +4,7 @@ import {supported} from './src/measure.js';
 // import {singleBase, genderVariants, supportsDoubleTone, supportsTone} from './src/variants.js';
 import {normalize, denormalizeForSupport} from './src/valid.js';
 import {normalizeForStorage} from './task/server.js';
-import {restoreForClient, supportsTone, genderVariants} from './task/client.js';
+import {restoreForClient, supportsTone, genderVariants, applySkinTone} from './task/client.js';
 
 const {suite, test, assert} = self;
 
@@ -158,10 +158,15 @@ suite('client', () => {
 
   test('genderVariants', () => {
     assert.deepEqual(genderVariants('👩🏾‍🍼', 130), {
-      f: "👩‍🍼",
-      m: "👨‍🍼",
-      n: "🧑‍🍼",
+      f: '👩🏾‍🍼',
+      m: '👨🏾‍🍼',
+      n: '🧑🏾‍🍼',
     });
+  });
+
+  test('applySkinTone', () => {
+    assert.equal(applySkinTone('👩🏾‍🍼', 0), '👩‍🍼');
+    assert.equal(applySkinTone('🦷👩‍🍼👩‍🍼', 0x1f3fe), '🦷👩🏾‍🍼👩🏾‍🍼');
   });
 });
 
