@@ -149,13 +149,13 @@ export function genderVariants(raw, version) {
       return [];
     }
 
-    if (part.length === 1) {
+    if (part.length === 1 || part.length === 2 && helper.isToneModifier(part[1])) {
       const only = part[0];
       if (roles.has(only)) {
         return {
-          'n': [only],
-          'f': [only, helper.runeGenderFemale],
-          'm': [only, helper.runeGenderMale],
+          'n': part,
+          'f': [...part, helper.runeGenderFemale],
+          'm': [...part, helper.runeGenderMale],
         };
       }
 
