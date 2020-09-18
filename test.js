@@ -196,6 +196,8 @@ suite('client', () => {
       n: '🧑🏾‍🍼',
     });
 
+    assert.deepEqual(genderVariants('👩🏾‍🍼', 120), {});  // no variants in 120, unsupported
+
     assert.deepEqual(genderVariants('💇🏻‍♂️', 130), {
       f: '💇🏻‍♀️',
       m: '💇🏻‍♂️',
