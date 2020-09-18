@@ -7,10 +7,11 @@ const singleBaseSource = [
 ];
 
 export const singleBase = new Map();
-for (let i = 0; i < singleBaseSource.length; i += 3) {
-  const base = singleBaseSource[i+0];
-  singleBase.set(singleBaseSource[i+1], base);
-  singleBase.set(singleBaseSource[i+2], base);
+while (singleBaseSource.length !== 0) {
+  const source = singleBaseSource.splice(0, 3);
+  singleBase.set(source[0], source);
+  singleBase.set(source[1], source);
+  singleBase.set(source[2], source);
 }
 
 export function normalizePointGender(point) {
@@ -19,7 +20,7 @@ export function normalizePointGender(point) {
   }
   const base = singleBase.get(point);
   if (base !== undefined) {
-    return base;
+    return base[0];
   }
   return point;
 }

@@ -146,7 +146,7 @@ export function deexpando(source) {
     // simple mode
     let index = 0;
     switch (headPerson) {
-      case helper.runeGenderFemale:
+      case helper.runePersonWoman:
         index = 1;
         break;
       case helper.runePersonMan:

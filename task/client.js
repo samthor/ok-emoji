@@ -9,7 +9,10 @@ import {
   roles as rolesSource,
 } from '../src/raw/defs.js';
 import {jsdecode} from '../src/string.js';
-import {normalizePointAll, normalizePointGender} from '../src/normalize.js';
+import {singleBase, normalizePointGender} from '../src/normalize.js';
+
+const unicode13RoleGender = [0x1f470, 0x1f935];
+const unicode14Neuter = [helper.runeCrown, helper.runeMusicalNotes];
 
 const roles = new Set();
 jsdecode(rolesSource).forEach((role) => roles.add(role));
@@ -140,7 +143,7 @@ export function genderVariants(raw, version) {
   //  * no gendered tuxedo/bride until E13
 
 
-  const build = (part) => {
+  const build = (/** @type {[]number} */ part) => {
     part = part.slice();
     expando(part);
 
@@ -152,10 +155,32 @@ export function genderVariants(raw, version) {
     if (part.length === 1 || part.length === 2 && helper.isToneModifier(part[1])) {
       const only = part[0];
       if (roles.has(only)) {
+        if (version < 130 && unicode13RoleGender.indexOf(part[0]) !== -1) {
+          return null;  // only added in unicode 13
+        }
+
+        if (version < 120) {
+          // catches a lot of disability emoji introduced in 12.0
+          const check = String.fromCodePoint(part[0]);
+          if (unicode12Has(check)) {
+            return null;
+          }
+        }
+
         return {
           'n': part,
           'f': [...part, helper.runeGenderFemale],
           'm': [...part, helper.runeGenderMale],
+        };
+      }
+
+      // handles individual people, child, old adult/woman/man
+      const base = singleBase.get(only);
+      if (base !== undefined) {
+        return {
+          'n': [base[0]],
+          'f': [base[1]],
+          'm': [base[2]],
         };
       }
 
@@ -177,7 +202,7 @@ export function genderVariants(raw, version) {
 
     if (peopleAt.length === 1) {
       // Person is at 0th position.
-
+ 
       const f = part.slice();
       f[0] = helper.runePersonWoman;
       const wasExpando = deexpando(f);
@@ -186,12 +211,43 @@ export function genderVariants(raw, version) {
       m[0] = helper.runePersonMan;
       wasExpando && deexpando(m);  // don't try again if we didn't hit before
 
-      return {
-        'n': part, f, m,
+      const out = {
+        f,
+        m,
       };
+
+      // Remove some gendered professions. Awkwardly retain skin tone.
+      if (part.length === 2 || part.length === 3 && helper.isToneModifier(part[1])) {
+        const profession = part[part.length - 1];
+
+        // Don't allow "ROYALTY" or "DANCER" until E14.
+        if (version < 140) {
+          if (unicode14Neuter.indexOf(profession) !== -1) {
+            return out;
+          }
+        }
+
+        if (version < 130) {
+          if (profession === 0x1f37c) {
+            // Don't allow "PERSON FEEDING BABY" (and f/m) until E13.
+            return null;
+          }
+          if (profession == helper.runeHolidayTree) {
+            // Don't allow "MX CLAUS" until E13.
+            return out;
+          }
+        }
+
+        if (version < 121) {
+          return out;  // E12.1 introduced all neuter professions (including "hair")
+        }
+      }
+
+      out['n'] = part;
+      return out;
     }
 
-    // TODO: paired gender emojis
+    // TODO: paired gender emojis such as holding hands, family etc
 
     return null;
   };

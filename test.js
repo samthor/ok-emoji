@@ -5,6 +5,7 @@ import {supported} from './src/measure.js';
 import {normalize, denormalizeForSupport} from './src/valid.js';
 import {normalizeForStorage} from './task/server.js';
 import {restoreForClient, supportsTone, genderVariants, applySkinTone} from './task/client.js';
+import { deexpando } from './src/expando.js';
 
 const {suite, test, assert} = self;
 
@@ -134,6 +135,15 @@ suite('server', () => {
   });
 });
 
+suite('expando', () => {
+  test('deexpando', () => {
+    debugger;
+    const deexpandoPrincess = [0x1f469, 0x1f451];
+    assert.isTrue(deexpando(deexpandoPrincess));
+    assert.deepEqual(deexpandoPrincess, [0x1f478]);
+  });
+});
+
 suite('client', () => {
   test('restoreForClient', () => {
     assert.equal(restoreForClient('🧑‍🎄', 130), '🧑‍🎄', 'version 13 supports this');
@@ -157,11 +167,35 @@ suite('client', () => {
   });
 
   test('genderVariants', () => {
+    assert.deepEqual(genderVariants('👦', 130), {
+      f: '👧',
+      m: '👦',
+      n: '🧒',
+    });
+
+    assert.deepEqual(genderVariants('👸👨‍⚕️', 120), {
+      f: '👸👩‍⚕️',
+      m: '🤴👨‍⚕️',
+    });
+
+    assert.deepEqual(genderVariants('👸👨‍⚕️', 130), {
+      f: '👸👩‍⚕️',
+      m: '🤴👨‍⚕️',
+      n: '👸🧑‍⚕️',  // princess remains same, no normalized version
+    });
+
+    assert.deepEqual(genderVariants('👸', 140), {
+      f: '👸',
+      m: '🤴',
+      n: '🧑‍👑',  // normalized version is coming soon
+    });
+
     assert.deepEqual(genderVariants('👩🏾‍🍼', 130), {
       f: '👩🏾‍🍼',
       m: '👨🏾‍🍼',
       n: '🧑🏾‍🍼',
     });
+
     assert.deepEqual(genderVariants('💇🏻‍♂️', 130), {
       f: '💇🏻‍♀️',
       m: '💇🏻‍♂️',
