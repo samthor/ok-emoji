@@ -1,7 +1,7 @@
-
 /**
- * @fileoverview Uses the DOM to guess which version of emoji is supported by the current
- * environment.
+ * @fileoverview Guesses which version of emoji is supported by the current browser.
+ *
+ * Uses a HTML canvas, prefers OffscreenCanvas if available.
  */
 
 /**
@@ -19,19 +19,26 @@ function internalDetermine(widthHelper) {
     return whole < sum;
   };
 
+  // check "WOMAN: BEARD" and "HEART ON FIRE"
+  if (zwjSupported('🧔‍♀️') && zwjSupported('❤️‍🔥')) {
+    return 131;
+  }
+
   // check "MAN WITH VEIL", "MX CLAUS", "POLAR BEAR", "TRANSGENDER FLAG", and "MAN FEEDING BABY: DARK SKIN"
   // Android 11 (possibly beta) doesn't support "POLAR BEAR" or "TRANSGENDER FLAG" (but supports
   // all non-ZWJ), and other platforms might be similar. Check for a minimum of 2/5.
   const check13 = [
-    zwjSupported('👰‍♂️'),
-    zwjSupported('🧑‍🎄'),
-    zwjSupported('🐻‍❄️'),
-    zwjSupported('🏳️‍⚧️'),
-    zwjSupported('🧑🏿‍🍼'),
+    '👰‍♂️',
+    '🧑‍🎄',
+    '🐻‍❄️',
+    '🏳️‍⚧️',
+    '🧑🏿‍🍼',
   ];
-  const countSupport13 = check13.filter((x) => x).length;
-  if (countSupport13 >= 2) {
-    return 130;
+  let support13Count = 0;
+  for (const check of check13) {
+    if (zwjSupported(check) && ++support13Count >= 2) {
+      return 130;
+    }
   }
 
   // check "JUDGE" and "PERSON: RED HAIR" (non-gendered)
@@ -59,7 +66,15 @@ function internalDetermine(widthHelper) {
     return 40;
   }
 
-  // at some point, it's not useful to continue
+  // Emoji 3.0 doesn't have ZWJs to check.
+  // It does introduce some body parts with skin tones, e.g. "🤙🏾", which aren't ZWJs but could work.
+
+  // check "KISS: WOMAN, MAN"
+  if (zwjSupported('👩‍❤️‍💋‍👨')) {
+    return 20;
+  }
+
+  // at some point, it's not useful to continue (that was about 11.0)
   return 0;
 }
 
@@ -70,14 +85,17 @@ function internalDetermine(widthHelper) {
  * @return {number}
  */
 export default function determineEmojiSupport() {
-  if (typeof document === 'undefined') {
-    return 0;
+  let canvas;
+  try {
+    canvas = new OffscreenCanvas(16, 16);
+  } catch (e) {
+    if (typeof document === 'undefined') {
+      return 0;
+    }
+    canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 16;
   }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 16;
   const context = canvas.getContext('2d');
-
   context.fontFamily = 'sans-serif';
   context.fontSize = '16px';
 

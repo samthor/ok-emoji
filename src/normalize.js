@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Simple helpers to reduce emoji to their gender-neutral base.
+ *
+ * Operates only on explicitly gendered simple emoji parts: people, children, and old people.
+ */
+
 import * as helper from './helper.js';
 
 const singleBaseSource = [

@@ -5,6 +5,8 @@
 /**
  * Decodes a JavaScript string into Unicode code points.
  *
+ * This is _probably_ the same as `Array.from` in some places.
+ *
  * @param {string} s to decode
  * @return {!Array<number>} code points
  */

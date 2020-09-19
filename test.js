@@ -167,6 +167,14 @@ suite('client', () => {
   });
 
   test('genderVariants', () => {
+    assert.deepEqual(genderVariants('🧔‍♂️', 131), {
+      f: '🧔‍♀️',
+      m: '🧔‍♂️',
+      n: '🧔',
+    });
+
+    assert.deepEqual(genderVariants('🧔‍♂️', 130), {});
+
     assert.deepEqual(genderVariants('👦', 130), {
       f: '👧',
       m: '👦',

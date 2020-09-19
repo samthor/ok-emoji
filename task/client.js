@@ -9,7 +9,7 @@ import {
   roles as rolesSource,
 } from '../src/raw/defs.js';
 import {jsdecode} from '../src/string.js';
-import {singleBase, normalizePointGender} from '../src/normalize.js';
+import {singleBase, normalizePointGender, normalizePointAll} from '../src/normalize.js';
 
 const unicode13RoleGender = [0x1f470, 0x1f935];
 const unicode14Neuter = [helper.runeCrown, helper.runeMusicalNotes];
@@ -96,6 +96,7 @@ export function restoreForClient(raw, version) {
       }
     }
 
+    // TODO: we merge 13 and 13.1, but it's only for ZWJ'ed stuff, should we check in client?
     if (version >= 130) {
       return s;
     } else if (unicode13Has(s)) {
@@ -141,6 +142,7 @@ export function genderVariants(raw, version) {
   //  * no neuter hair in E11
   //  * no "person with white cane", "person in motorized wheelchair", "person in manual wheelchair", until E12.1
   //  * no gendered tuxedo/bride until E13
+  //  * no gendered beard until E13.1
 
 
   const build = (/** @type {[]number} */ part) => {
@@ -151,17 +153,22 @@ export function genderVariants(raw, version) {
     if (part.length === 0) {
       return [];
     }
+    const partWithoutTone = part.map(normalizePointAll).filter((x) => x !== 0);
 
-    if (part.length === 1 || part.length === 2 && helper.isToneModifier(part[1])) {
+    if (partWithoutTone.length === 1) {
       const only = part[0];
       if (roles.has(only)) {
-        if (version < 130 && unicode13RoleGender.indexOf(part[0]) !== -1) {
+        if (version < 131 && only === 0x1f9d4) {
+          return null;  // beard only a role from 13.1+
+        }
+
+        if (version < 130 && unicode13RoleGender.indexOf(only) !== -1) {
           return null;  // only added in unicode 13
         }
 
         if (version < 120) {
           // catches a lot of disability emoji introduced in 12.0
-          const check = String.fromCodePoint(part[0]);
+          const check = String.fromCodePoint(only);
           if (unicode12Has(check)) {
             return null;
           }
@@ -201,7 +208,7 @@ export function genderVariants(raw, version) {
     }
 
     if (peopleAt.length === 1) {
-      // Person is at 0th position.
+      // Person must be at 0th position, this is just a person with a profession.
  
       const f = part.slice();
       f[0] = helper.runePersonWoman;
@@ -217,8 +224,8 @@ export function genderVariants(raw, version) {
       };
 
       // Remove some gendered professions. Awkwardly retain skin tone.
-      if (part.length === 2 || part.length === 3 && helper.isToneModifier(part[1])) {
-        const profession = part[part.length - 1];
+      if (partWithoutTone.length === 2) {
+        const profession = partWithoutTone[1];
 
         // Don't allow "ROYALTY" or "DANCER" until E14.
         if (version < 140) {
