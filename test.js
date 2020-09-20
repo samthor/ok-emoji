@@ -82,7 +82,6 @@ suite('server', () => {
 
 suite('expando', () => {
   test('deexpando', () => {
-    debugger;
     const deexpandoPrincess = [0x1f469, 0x1f451];
     assert.isTrue(deexpando(deexpandoPrincess));
     assert.deepEqual(deexpandoPrincess, [0x1f478]);
@@ -91,6 +90,10 @@ suite('expando', () => {
 
 suite('client', () => {
   test('restoreForClient', () => {
+    // TODO: should we just show both?
+    assert.equal(restoreForClient('🧑‍👑', 140), '🧑‍👑', 'version 14 supports "royalty"');
+    assert.notEqual(restoreForClient('🧑‍👑', 130), '🧑‍👑', 'version 13 does not support "royalty"');
+
     assert.equal(restoreForClient('🧑‍🎄', 130), '🧑‍🎄', 'version 13 supports this');
     assert.oneOf(restoreForClient('🧑‍🎄', 120), ['🎅', '🤶'], 'version 12 does not support mx claus');
 
