@@ -99,14 +99,24 @@ function updateAndRender() {
   const serverNormalized = serverTask.normalizeForStorage(r);
   const server = serverNormalized.join('');
 
-  out.textContent = `supported: ${supported(r)}
+  out.textContent = `supported:  ${supported(r)}
 normalized: ${normalized} ${hex(normalized)}
-server: ${server} ${hex(server)}
+server:     ${server} ${hex(server)}`;
 
-`;
+  const genderRetainedServer = serverTask.normalizeForStorage(r, true).join('');
+  if (genderRetainedServer !== server) {
+    out.textContent += `\nretained:   ${genderRetainedServer} ${hex(genderRetainedServer)}`;
+  }
+
+  out.textContent += '\n\n';
 
   for (const serverStringPart of serverNormalized) {
-    const stringPart = clientTask.restoreForClient(serverStringPart, version);
+    const optionStringPart = clientTask.restoreForClient(serverStringPart, version);
+
+    const displayBaseParts = (optionStringPart || [serverStringPart]).map((x) => `${x} ${hex(x)}`);
+
+    // use 0th just as default sane
+    const stringPart = optionStringPart ? optionStringPart[0] : serverStringPart;
 
     const variants = clientTask.genderVariants(stringPart, version);
     const v = renderVariants(variants);
@@ -114,7 +124,7 @@ server: ${server} ${hex(server)}
     const toneCount = clientTask.supportsTone(stringPart, version);
     const toneString = ['no', 'single', 'double'][toneCount];
 
-    const text = `base: ${stringPart} ${hex(stringPart)}
+    const text = `base: ${displayBaseParts.join(', ')}
 tone: ${toneString}${v ? `\nvariants: ${v}` : ''}
 
 `;

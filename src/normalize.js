@@ -8,7 +8,7 @@ import * as helper from './helper.js';
 
 const singleBaseSource = [
   helper.runePerson, helper.runePersonWoman, helper.runePersonMan,
-  0x1f9d2, 0x1f467, 0x1f466,  // child, girl, boy
+  helper.runeChild, helper.runeGirl, helper.runeBoy,  // child, girl, boy
   0x1f9d3, 0x1f475, 0x1f474,  // old {adult,woman,man}
 ];
 

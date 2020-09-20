@@ -10,6 +10,7 @@ import {
 } from '../src/raw/defs.js';
 import {jsdecode} from '../src/string.js';
 import {singleBase, normalizePointGender, normalizePointAll} from '../src/normalize.js';
+import {validPersonGroup} from '../src/group.js';
 
 const unicode13RoleGender = [0x1f470, 0x1f935];
 const unicode14Neuter = [helper.runeCrown, helper.runeMusicalNotes];
@@ -43,93 +44,122 @@ const unicode13Has = buildStringHas(unicode13);
  * Denormalizes server emoji for client based on the current Unicode version. This can modify or
  * even clear the incoming emoji completely, returning an empty string.
  *
- * TODO: seed gender choice
+ * The server will never send us skin tones. It can send us gendered emoji, which we must display.
  *
  * @param {string} raw
  * @param {number} version
- * @return {string}
+ * @return {?Array<string>} output options (could be empty), or null for use raw
  */
 export function restoreForClient(raw, version) {
-  if (version <= 0 || version >= 140) {
-    return raw;  // do nothing
-  }
-
-  if (version >= 130) {
-    // we only need to denormalize ZWJ'ed emoji, fast-path
-    if (raw.indexOf('\u{200d}') === -1) {
-      return raw;
-    }
-    // TODO: regexp for musical notes / crown
-  }
+  const genderSlots = [];
+  let change = false;
 
   const rewriter = (part) => {
     if (deexpando(part)) {
-      return single(part);  // all expandos result in ancient valid emoji
+      change = true;
+      return part;  // all expandos result in ancient valid emoji
     }
-    const s = single(part);  // TODO: what we get from the server is "correct" modulo expandos
+    if (version >= 140 || version === 0) {
+      return part;
+    }
 
     if (part.length === 2 && part[0] === helper.runePerson) {
       switch (part[1]) {
         case helper.runeHolidayTree:
           if (version >= 130) {
-            return s;
+            return part;
           }
           // "MX CLAUS" to f or m
-          return String.fromCodePoint(choiceFromOptions(0x1f936, 0x1f385));
+          genderSlots.push([0x1f936, 0x1f385]);
+          change = true;
+          return [-1];
 
         case helper.runeMusicalNotes:
           // "DANCER" to f or m
-          return String.fromCodePoint(choiceFromOptions(0x1f483, 0x1f57a));
+          genderSlots.push([0x1f483, 0x1f57a]);
+          change = true;
+          return [-1];
 
         case helper.runeCrown:
           // "ROYALTY" to f or m
-          return String.fromCodePoint(choiceFromOptions(0x1f478, 0x1f934));
+          genderSlots.push([0x1f478, 0x1f934]);
+          change = true;
+          return [-1];
       }
 
       // gendered hair supported only in 121 (hair from 110)
       if (version < 121 && helper.isHairEmoji(part[1])) {
         if (version < 110) {
-          return '';  // no hair emoji supported
+          return null;  // no hair emoji supported
         }
-        const p = choiceFromOptions(helper.runePersonWoman, helper.runePersonMan);
-        return String.fromCodePoint(p, 0x200d, part[1]);
+        change = true;
+        genderSlots.push([helper.runePersonWoman, helper.runePersonMan]);
+        return [-1, part[1]];
       }
     }
 
+    const s = single(part);  // TODO: check ZWJ instead?
+
     // TODO: we merge 13 and 13.1, but it's only for ZWJ'ed stuff, should we check in client?
     if (version >= 130) {
-      return s;
+      return part;
     } else if (unicode13Has(s)) {
-      return '';
+      return null;
     }
 
     // TODO: we treat 12.1 as minimum 12.x support
     if (version >= 121) {
-      return s;
+      return part;
     }
 
     // TODO: E12.1 added a ton of gendered folks, should only include from there
 
-    // neutral "PEOPLE HOLDING HANDS" added in 12.1
+    // neutral "PEOPLE HOLDING HANDS" added in 12.0
     if (part.length === 3 && part[0] === helper.runePerson && part[1] === helper.runeHandshake && part[2] === helper.runePerson) {
-      return String.fromCodePoint(choiceFromOptions(0x1f46d, 0x1f46b, 0x1f46c));
+      change = true;
+      return [0x1f46b];  // use "WOMAN AND MAN HOLDING HANDS", too hard otherwise
     }
     if (unicode12Has(s)) {
-      return '';
+      return null;
     }
 
     if (version >= 110) {
-      return s;
+      return part;
     } else if (unicode11Has(s)) {
-      return '';
+      return null;
     }
 
     // give up < E11.0
-    return s;
+    return part;
   };
 
-  return split(raw).map(rewriter).join('');
+  let work = split(raw).map(rewriter);
+  if (!change && work.indexOf(null) === -1 && genderSlots.length === 0) {
+    return null;  // nothing actually changed
+  }
+
+  work = work.filter((x) => x !== null);
+  if (work.length === 0) {
+    return [];
+  } else if (genderSlots.length === 0) {
+    return [join(work)];
+  }
+
+  const options = [[], []];
+  for (const part of work) {
+    if (part[0] !== -1) {
+      options[0].push(part);
+      options[1].push(part);
+      continue;
+    }
+    part.shift();
+    const slot = genderSlots.shift();
+    options[0].push([slot[0], ...part])
+    options[1].push([slot[1], ...part])
+  }
+  return options.map(join);
 }
+
 
 /**
  * @param {string} raw
@@ -137,17 +167,16 @@ export function restoreForClient(raw, version) {
  * @return {!Object<string, string>}
  */
 export function genderVariants(raw, version) {
-
-  // TODO: 
-  //  * no neuter hair in E11
-  //  * no "person with white cane", "person in motorized wheelchair", "person in manual wheelchair", until E12.1
-  //  * no gendered tuxedo/bride until E13
-  //  * no gendered beard until E13.1
-
-
   const build = (/** @type {[]number} */ part) => {
     part = part.slice();
     expando(part);
+
+    const personGroup = validPersonGroup(part, version);
+    if (personGroup) {
+      if (helper.isFamilyPoints(part)) {
+        return null;  // TODO: family
+      }
+    }
 
     part = part.map(normalizePointGender).filter((x) => x !== 0);
     if (part.length === 0) {
@@ -248,15 +277,45 @@ export function genderVariants(raw, version) {
         if (version < 121) {
           return out;  // E12.1 introduced all neuter professions (including "hair")
         }
+
+        if (version < 110) {
+          if (helper.isHairEmoji(profession)) {
+            return null;  // hair added in E11
+          }
+          if (profession === 0x1f9b8 || profession === 0x1f9b9) {
+            return null;  // "SUPERHERO" and "SUPERVILLAN" introduced in E11
+          }
+        }
       }
 
       out['n'] = part;
       return out;
     }
 
-    // TODO: paired gender emojis such as holding hands, family etc
+    // We now have multiple people. This just catches the few groups we have.
+    if (peopleAt.length !== 2 || !personGroup) {
+      return null;  // not sure how this happened
+    }
 
-    return null;
+    const swapGender = (a, b) => {
+      const gen = part.slice();
+      gen[peopleAt[0]] = a;
+      gen[peopleAt[1]] = b;
+      return gen;
+    };
+
+    const out = {
+      'f': swapGender(helper.runePersonWoman, helper.runePersonWoman),
+      'm': swapGender(helper.runePersonMan, helper.runePersonMan),
+      'c': swapGender(helper.runePersonWoman, helper.runePersonMan),
+    };
+
+    if (!(partWithoutTone[1] === helper.runeHandshake && version < 120)) {
+      out['n'] = swapGender(helper.runePerson, helper.runePerson);
+    }
+
+    Object.values(out).forEach(deexpando);
+    return out;
   };
 
   const empty = {};
@@ -330,17 +389,6 @@ export function supportsTone(raw, version) {
     return 1;
   }
   return 0;
-}
-
-/**
- * Helper to choose a random option.
- *
- * @param {!Array<number>} arr
- * @return {number}
- */
-function choiceFromOptions(...arr) {
-  const index = Math.floor(Math.random() * arr.length);
-  return arr[index];
 }
 
 /**

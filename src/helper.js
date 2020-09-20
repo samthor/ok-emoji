@@ -10,9 +10,13 @@ export const runeKeycap = 0x20e3;
 export const runeFlagA = 0x1f1e6;
 export const runeFlagZ = 0x1f1ff;
 
+export const runePerson = 0x1f9d1;
 export const runePersonWoman = 0x1f469;
 export const runePersonMan = 0x1f468;
-export const runePerson = 0x1f9d1;
+
+export const runeChild = 0x1f9d2;
+export const runeGirl = 0x1f467;
+export const runeBoy = 0x1f466;
 
 export const runeGenderFemale = 0x2640;
 export const runeGenderMale = 0x2642;
@@ -55,10 +59,13 @@ export function isTagRune(r) {
 
 /**
  * @param {!Array<number>} p points to check
- * @return {boolean} whether this is a person group (not a Family)
+ * @return {boolean} whether this is probably a person group (not a Family)
  */
 export function isPersonGroup(p) {
   if (p.length <= 2) {
+    return false;
+  }
+  if (!(isGenderPerson(p[0]) && isGenderPerson(p[p.length - 1]))) {
     return false;
   }
   let count = 0;
@@ -67,15 +74,45 @@ export function isPersonGroup(p) {
       ++count;
     }
   }
-  // for now, these always have two people
+  // for now, these always have two people at start/end
   return count === 2;
 }
 
 /**
- * @param {!Array<number>} p points to check
+ * @param {!Array<number>} points points to check
  * @return {boolean} whether this is a Family
  */
-export function isFamilyPoints(p) {
-  // TODO: supports skin tone in future
-  return p.length >= 2 && isFamilyMember(p[0]) && isFamilyMember(p[1]);
+export function isFamilyPoints(points) {
+  if (points.length < 2) {
+    return false;
+  }
+  const family = points.slice();
+
+  const adults = [];
+  while (isGenderPerson(family[0])) {
+    adults.push(family.shift());
+  }
+  for (const child of family) {
+    if (child !== runeBoy && child !== runeGirl) {
+      return false;
+    }
+  }
+
+  if (!(family.length === 1 || family.length === 2) && !(adults.length === 1 || adults.length === 2)) {
+    return false;  // must have 1 or 2 of each
+  }
+
+  if (adults[0] === runePersonWoman) {
+    if (adults.length === 2 && adults[1] === runePersonMan) {
+      return false;  // "MAN" before "WOMAN" in family emoji
+    }
+  }
+
+  if (family[0] === runeBoy) {
+    if (family.length === 2 && family[1] === runeGirl) {
+      return false;  // "GIRL" must become before "BOY" (inverse from above)
+    }
+  }
+
+  return true;
 }

@@ -9,6 +9,7 @@ import * as helper from '../src/helper.js';
 import {jsdecode} from '../src/string.js';
 import {expando} from '../src/expando.js';
 import {normalizePointAll} from '../src/normalize.js';
+import {validPersonGroup} from '../src/group.js';
 
 
 // Valid parts. Contains most things.
@@ -19,72 +20,73 @@ const professionsSet = new Set(Array.from(jsdecode(professionsSource)));
 [helper.runeCrown, helper.runeMusicalNotes].forEach((extra) => professionsSet.add(extra));
 
 // ZWJ emoji. This is actually not canonical emoji, it just contains runes slammed together.
-// Add person group cases (holding hands, heart, kiss).
 const multiSet = new Set(split(multiSource).map((points) => String.fromCodePoint.apply(null, points)));
-multiSet.add(String.fromCodePoint(helper.runePerson, helper.runeHandshake, helper.runePerson));
-multiSet.add(String.fromCodePoint(helper.runePerson, helper.runeHeart, helper.runePerson));
-multiSet.add(String.fromCodePoint(helper.runePerson, helper.runeHeart, helper.runeKiss, helper.runePerson));
+
 
 /**
- * Normalizes a single emoji run. Returns a server string (no VS16 etc), possibly the empty string.
+ * Ensures that the passed emoji is valid, removing skin tone modifiers. May return the input array.
  *
  * @param {!Array<number>} points
- * @return {string}
+ * @return {?Array<number>}
  */
-function normalizeSingle(points) {
+function matchSingle(points) {
   // Match valid flags. Disallow invalid ones.
   if (helper.isFlagPoint(points[0])) {
     if (points.length === 2 && isFlag(points[0], points[1])) {
-      return String.fromCodePoint(points[0], points[1]);
+      return points;
     }
-    return '';
+    return null;
   }
 
-  // Match family and return "NUCLEAR FAMILY".
-  if (points.length >= 2 && helper.isFamilyMember(points[0]) && helper.isFamilyMember(points[1])) {
-    return '\u{1f46a}';
-  }
-
-  // Normalize all points, removing gender and other options.
-  points = points.map(normalizePointAll).filter((x) => x !== 0);
+  points = points.filter((x) => !helper.isToneModifier(x));
   if (points.length === 0) {
-    return '';
+    return null;
   }
 
   // Check validity of ZWJ'ed emoji.
   if (points.length !== 1) {
-    if (points.length === 2 && points[0] === helper.runePerson && professionsSet.has(points[1])) {
-      return single(points);
+    if (points.length === 2 && helper.isGenderPerson(points[0]) && professionsSet.has(points[1])) {
+      return points;
     }
-    const check = String.fromCodePoint.apply(null, points);
+
+    const check = String.fromCodePoint.apply(null, points);  // no gendered emoji here
     if (multiSet.has(check)) {
-      return single(points);  // cand is just points stuck together, really format it here
+      return points;
     }
-    return '';
+
+    // nb. This doesn't catch expandos but they're not in this branch anyway (length === 1).
+    if (validPersonGroup(points)) {
+      return points;
+    }
+    return null;
   }
 
-  // Match expandos (old single rune to multiple). At this point we have no gender/tone points
-  // so the expando code won't retain it. All expandos are considered valid.
+  // Match expandos (old single rune to multiple). All expandos are considered valid.
   if (expando(points)) {
-    points = points.map(normalizePointAll);  // expandos include explicit gender
-    return single(points);
+    return points;
   }
 
   // We have a single, successful point. Let's see if it's even a valid part at all.
   if (partsSet.has(points[0])) {
-    return single(points);
+    return points;
   }
 
-  return '';
+  return null;
 }
 
 /**
  * Normalizes completely untrusted user data. Not designed to be run in a user's browser. Returns a
- * formatted emoji, including ZWJs and VS16s as needed.
+ * an array of formatted emoji, including ZWJs and VS16s as needed. (This should just be joined as
+ * string parts, but also provides a count of emoji.)
  *
- * This updates the passed emoji, removing non-emoji characters, as well as stripping gender and
- * skin tone. It also removes unknown ZWJ'ed emoji, but expandos old-style single points into
- * their longer form (e.g., "SANTA" => "MAN" "ZWJ" "HOLIDAY TREE").
+ * This updates the passed emoji, removing non-emoji characters and unknown ZWJ'ed emoji. For
+ * single emoji, this removes gender unless the emoji is one of the single bases
+ * ("PERSON"/"WOMAN"/"MAN", same for "CHILD" and "OLDER PERSON"). For runs of emoji, this does not
+ * modify gender. In all cases, this removes skin tone modifiers.
+ *
+ * This function avoids old-style single points in favour of expando'ed versions, e.g.:
+ *  - "SANTA" => "MAN" "ZWJ" "HOLIDAY TREE"
+ *  - ""
  *
  * There's also two emoji we map to potential/invalid runs to remove gender:
  *   "PRINCESS" and "PRINCE" => "PERSON" "CROWN"
@@ -98,17 +100,36 @@ function normalizeSingle(points) {
  * time.
  *
  * @param {string} raw
+ * @param {boolean=} retainGender whether to always retain gender information
  * @return {!Array<string>}
  */
-export function normalizeForStorage(raw) {
+export function normalizeForStorage(raw, retainGender=undefined) {
   const out = [];
 
-  for (const initial of iterate(raw)) {
-    const update = normalizeSingle(initial);
-    if (update.length !== 0) {
+  for (const part of iterate(raw)) {
+    const update = matchSingle(part);
+    if (update !== null) {
       out.push(update);
     }
   }
+  if (out.length === 0) {
+    return [];
+  }
 
-  return out;
+  if (retainGender === undefined) {
+    retainGender = (out.length !== 1);
+  }
+
+  if (!retainGender) {
+    let solo = out[0];
+    if (helper.isFamilyPoints(solo)) {
+      // this is somewhat special but we revert to "NUCLEAR FAMILY" here to remove gender
+      out[0] = [helper.runeNuclearFamily];
+    } else if (solo.length !== 1) {
+      solo = solo.map(normalizePointAll).filter((x) => x !== 0);
+      out[0] = solo;
+    }
+  }
+
+  return out.map(single);
 }

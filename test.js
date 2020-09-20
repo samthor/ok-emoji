@@ -68,9 +68,12 @@ suite('server', () => {
       '👸🏽': ['\u{1f9d1}\u{200d}\u{1f451}'],
       '👩🏾‍🤝‍👨🏻': ['\u{1f9d1}\u{200d}\u{1f91d}\u{200d}\u{1f9d1}'],
       'a🏴󠁧󠁢󠁳󠁣󠁴󠁿q': ['🏴󠁧󠁢󠁳󠁣󠁴󠁿'],
-      '👩🏾‍🍼👵🏻': ['🧑‍🍼', '🧓'],
-      '👩‍👩‍👧👩‍👧': ['👪', '👪'],
+      '👩🏾‍🍼👵🏻': ['👩‍🍼', '👵'],  // gender not removed for run
+      '👩🏾‍🍼': ['🧑‍🍼'],
+      '👩‍👩‍👧👩‍👧': ['👩‍👩‍👧', '👩‍👧'],
+      '👩‍👧': ['👪'],
       '👨‍❤‍👨': ['\u{1f9d1}\u{200d}\u{2764}\u{fe0f}\u{200d}\u{1f9d1}'],
+      '👭': ['\u{1f9d1}\u{200d}\u{1f91d}\u{200d}\u{1f9d1}'],  // expando'ed version
     };
 
     Object.keys(tests).forEach((raw) => {
@@ -90,24 +93,25 @@ suite('expando', () => {
 
 suite('client', () => {
   test('restoreForClient', () => {
-    // TODO: should we just show both?
-    assert.equal(restoreForClient('🧑‍👑', 140), '🧑‍👑', 'version 14 supports "royalty"');
-    assert.notEqual(restoreForClient('🧑‍👑', 130), '🧑‍👑', 'version 13 does not support "royalty"');
+    assert.deepEqual(restoreForClient('🧑‍👑', 140), null, 'version 14 supports "royalty"');
+    assert.deepEqual(restoreForClient('🧑‍👑', 130), ['👸', '🤴'], 'version 13 does not support "royalty"');
 
-    assert.equal(restoreForClient('🧑‍🎄', 130), '🧑‍🎄', 'version 13 supports this');
-    assert.oneOf(restoreForClient('🧑‍🎄', 120), ['🎅', '🤶'], 'version 12 does not support mx claus');
+    assert.deepEqual(restoreForClient('🧑‍🎄', 130), null, 'version 13 supports this');
+    assert.deepEqual(restoreForClient('🧑‍🎄', 120), ['🤶', '🎅'], 'version 12 does not support mx claus');
 
-    assert.equal(restoreForClient('🦷🤍', 130), '🦷🤍', 'version 13');
-    assert.equal(restoreForClient('🦷🤍', 121), '🦷🤍', 'version 12.1');
-    assert.equal(restoreForClient('🦷🤍', 110), '🦷', 'version 11');
-    assert.equal(restoreForClient('🦷🤍', 50), '', 'version 5 supports nothing');
-    assert.equal(restoreForClient('🦸abc', 50), 'abc', 'version 5 removes superhero');
+    assert.deepEqual(restoreForClient('🦷🤍', 130), null, 'version 13');
+    assert.deepEqual(restoreForClient('🦷🤍', 121), null, 'version 12.1');
+    assert.deepEqual(restoreForClient('🦷🤍', 110), ['🦷'], 'version 11');
+    assert.deepEqual(restoreForClient('🦷🤍', 50), [], 'version 5 supports nothing');
+    assert.deepEqual(restoreForClient('🦸abc', 50), ['abc'], 'version 5 removes superhero');
 
-    assert.equal(restoreForClient('🧑‍🦰', 130), '🧑‍🦰', 'hair support in 13');
-    assert.oneOf(restoreForClient('🧑‍🦰', 120), ['👨‍🦰', '👩‍🦰'], 'no neuter hair in 12');
-    assert.equal(restoreForClient('🧑‍🦰', 50), '', 'no hair in 5');
+    assert.deepEqual(restoreForClient('🧑‍🤝‍🧑', 120), ['👫']);
 
-    assert.equal(restoreForClient('🦸', 0), '🦸', 'zero version should make no changes');
+    assert.deepEqual(restoreForClient('🧑‍🦰', 130), null, 'hair support in 13');
+    assert.deepEqual(restoreForClient('🧑‍🦰', 120), ['👩‍🦰', '👨‍🦰'], 'no neuter hair in 12');
+    assert.deepEqual(restoreForClient('🧑‍🦰', 50), [], 'no hair in 5');
+
+    assert.deepEqual(restoreForClient('🦸', 0), null, 'zero version should make no changes');
   });
 
   test('supportsTone', () => {
