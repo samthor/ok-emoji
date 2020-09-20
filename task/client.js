@@ -6,17 +6,14 @@ import {
   unicode12,
   unicode13,
   modifierBase as modifierBaseSource,
-  roles as rolesSource,
 } from '../src/raw/defs.js';
 import {jsdecode} from '../src/string.js';
 import {singleBase, normalizePointGender, normalizePointAll} from '../src/normalize.js';
 import {validPersonGroup} from '../src/group.js';
+import {isRole} from '../src/person.js';
 
 const unicode13RoleGender = [0x1f470, 0x1f935];
 const unicode14Neuter = [helper.runeCrown, helper.runeMusicalNotes];
-
-const roles = new Set();
-jsdecode(rolesSource).forEach((role) => roles.add(role));
 
 const modifierBase = new Set();
 jsdecode(modifierBaseSource).forEach((b) => modifierBase.add(b));
@@ -186,7 +183,7 @@ export function genderVariants(raw, version) {
 
     if (partWithoutTone.length === 1) {
       const only = part[0];
-      if (roles.has(only)) {
+      if (isRole(only)) {
         if (version < 131 && only === 0x1f9d4) {
           return null;  // beard only a role from 13.1+
         }

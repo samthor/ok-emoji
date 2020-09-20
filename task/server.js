@@ -2,7 +2,6 @@ import {iterate, split, single} from '../src/encoding.js'
 import {
   parts as partsSource,
   multi as multiSource,
-  professions as professionsSource,
 } from '../src/raw/defs.js';
 import {isFlag} from '../src/flags.js';
 import * as helper from '../src/helper.js';
@@ -10,14 +9,10 @@ import {jsdecode} from '../src/string.js';
 import {expando} from '../src/expando.js';
 import {normalizePointAll} from '../src/normalize.js';
 import {validPersonGroup} from '../src/group.js';
+import {isProfession} from '../src/person.js';
 
-
-// Valid parts. Contains most things.
+// Valid parts. Contains most things, including roles.
 const partsSet = new Set(Array.from(jsdecode(partsSource)));
-
-// Grab professions (used for ZWJ validation), including future professions.
-const professionsSet = new Set(Array.from(jsdecode(professionsSource)));
-[helper.runeCrown, helper.runeMusicalNotes].forEach((extra) => professionsSet.add(extra));
 
 // ZWJ emoji. This is actually not canonical emoji, it just contains runes slammed together.
 const multiSet = new Set(split(multiSource).map((points) => String.fromCodePoint.apply(null, points)));
@@ -45,7 +40,7 @@ function matchSingle(points) {
 
   // Check validity of ZWJ'ed emoji.
   if (points.length !== 1) {
-    if (points.length === 2 && helper.isGenderPerson(points[0]) && professionsSet.has(points[1])) {
+    if (points.length === 2 && helper.isGenderPerson(points[0]) && isProfession(points[1])) {
       return points;
     }
 
