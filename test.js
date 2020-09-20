@@ -74,6 +74,7 @@ suite('server', () => {
       '👩‍👧': ['👪'],
       '👨‍❤‍👨': ['\u{1f9d1}\u{200d}\u{2764}\u{fe0f}\u{200d}\u{1f9d1}'],
       '👭': ['\u{1f9d1}\u{200d}\u{1f91d}\u{200d}\u{1f9d1}'],  // expando'ed version
+      '👱‍♂️': ['👱'],
     };
 
     Object.keys(tests).forEach((raw) => {

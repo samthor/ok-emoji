@@ -38,6 +38,11 @@ function matchSingle(points) {
     return null;
   }
 
+  // This removes gender from roles.
+  if (points.length === 2 && helper.isGender(points[1])) {
+    points.pop();
+  }
+
   // Check validity of ZWJ'ed emoji.
   if (points.length !== 1) {
     if (points.length === 2 && helper.isGenderPerson(points[0]) && isProfession(points[1])) {
