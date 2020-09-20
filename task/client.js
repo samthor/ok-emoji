@@ -50,7 +50,7 @@ const unicode13Has = buildStringHas(unicode13);
  * @return {string}
  */
 export function restoreForClient(raw, version) {
-  if (version <= 0) {
+  if (version <= 0 || version >= 140) {
     return raw;  // do nothing
   }
 

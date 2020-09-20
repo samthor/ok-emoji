@@ -1,3 +1,9 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emoji</title>
+
 <style>
   canvas {
     image-rendering: -moz-crisp-edges;
@@ -5,23 +11,53 @@
   }
   input {
     font: inherit;
+    line-height: 16px;
+  }
+  input.emoji {
     font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Helvetica Neue', 'Helvetica', sans-serif;
   }
   pre {
     line-height: 1.5;
+    border-top: 2px solid #ccc;
+    background: #eee;
+    padding: 8px;
+  }
+  pre:empty {
+    background: none;
+    padding: none;
+  }
+
+  body {
+    font-family: Segoe UI,system-ui,-apple-system,sans-serif;
+    min-width: 320px;
+    box-sizing: border-box;
+  }
+
+  .row {
+    display: flex;
+    line-height: 32px;
+    align-items: center;
+  }
+  .row label {
+    width: 120px;
+  }
+  .row input {
+    width: 180px;
   }
 </style>
 <script type="module">
 
 import determineEmojiSupport from './src/version.js';
 
-console.info('emoji support', determineEmojiSupport());
+emojiVersion.value = determineEmojiSupport();
+console.info('emoji support', emojiVersion.value);
 
 import * as encoding from './src/encoding.js';
-import * as variants from './src/variants.js';
 import * as expando from './src/expando.js';
 
-import {normalize} from './src/valid.js';
+import * as clientTask from './task/client.js';
+import * as serverTask from './task/server.js';
+
 import {jsdecode} from './src/string.js';
 import {prepare, supported} from './src/measure.js';
 
@@ -33,7 +69,7 @@ function renderVariants(object) {
   }
   const enc = (key) => {
     const v = object[key];
-    return `\n  ${key} ${encoding.single(v)} ${hex(v)} ${supported(encoding.single(v))}`;
+    return `\n  ${key} ${v} ${hex(v)}`;
   };
   return Object.keys(object).map(enc).join('');
 }
@@ -45,7 +81,8 @@ function hex(all) {
   return `[${all.map((x) => x.toString(16)).join(', ')}]`;
 }
 
-text.oninput = () => {
+function updateAndRender() {
+  const version = emojiVersion.value;
   const r = text.value;
   if (!r) {
     history.replaceState(null, null, window.location.pathname);
@@ -54,29 +91,69 @@ text.oninput = () => {
   }
   history.replaceState(null, null, '#' + window.encodeURIComponent(r));
 
-  const {s: normalized, unknownMulti} = normalize(r);
-
-  out.textContent = `whole support: ${supported(r)}
-  normalized: ${normalized} (unknownMulti=${unknownMulti})
-
-`;
-
-  for (const enc of encoding.iterate(r)) {
-    const base = variants.singleBase(enc);
-    const v = renderVariants(variants.genderVariants(base));
-    const text = `base: ${encoding.single(base)} ${hex(base)} => ${hex(encoding.single(base))}
-tone: ${variants.supportsTone(base) ? (variants.supportsDoubleTone(base) ? 'double' : 'yes') : 'no'}${v ? '\nvariants: ' + v : ''}
-supported: ${supported(encoding.single(base))}
-
-`;
-    out.append(text);
+  const normalized = clientTask.normalize(r);
+  if (!normalized) {
+    out.textContent = '';
+    return;
   }
-};
+  const serverNormalized = serverTask.normalizeForStorage(r);
+  const server = serverNormalized.join('');
+
+  out.textContent = `supported: ${supported(r)}
+normalized: ${normalized} ${hex(normalized)}
+server: ${server} ${hex(server)}
+
+`;
+
+  for (const serverStringPart of serverNormalized) {
+    const stringPart = clientTask.restoreForClient(serverStringPart, version);
+
+    const variants = clientTask.genderVariants(stringPart, version);
+    const v = renderVariants(variants);
+
+    const toneCount = clientTask.supportsTone(stringPart, version);
+    const toneString = ['no', 'single', 'double'][toneCount];
+
+    const text = `base: ${stringPart} ${hex(stringPart)}
+tone: ${toneString}${v ? `\nvariants: ${v}` : ''}
+
+`;
+
+out.append(text);
+  }
+}
 
 text.value = window.decodeURIComponent(window.location.hash.substr(1));
-text.oninput();
+text.oninput = updateAndRender;
+emojiVersion.oninput = updateAndRender;
+
+updateAndRender();
 
 </script>
+</head>
+<body>
 
-<input type="text" id="text" />
+<datalist id="emojiVersionOptions">
+  <option value="140">Future</option>
+  <option value="131">September 2020</option>
+  <option value="130">March 2020</option>
+  <option value="121">May 2019</option>
+  <option value="120">March 2019</option>
+  <option value="110">June 2018</option>
+  <option value="0">Server</option>
+</datalist>
+
+<div class="row">
+  <label for="emojiVersion">Version</label>
+  <input type="number" id="emojiVersion" min="0" max="140" step="1" list="emojiVersionOptions" />
+</div>
+
+<div class="row">
+  <label for="text">Emoji</label>
+  <input type="text" class="emoji" id="text" />
+</div>
+
 <pre id="out"></pre>
+
+</body>
+</html>
