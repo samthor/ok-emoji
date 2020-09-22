@@ -46,6 +46,7 @@ const configSource = [
   {n: 140}, [helper.runeCrown, helper.runeMusicalNotes],  // future emoji
   {n: 130}, [helper.runeHolidayTree],  // claus
   {n: 121}, [helper.runeHandshake],
+  {}, [helper.runeKiss, helper.runeHeart],
 ];
 
 function updateConfig(config) {
@@ -220,13 +221,13 @@ export function joinForModifiers({base, gender, tone, extraTone}) {
 
   if (isGroup(base)) {
     if (base === helper.runeKiss) {
-      base.unshift(helper.runeHeart);  // kiss group has heart before it
+      out.unshift(helper.runeHeart);  // kiss group has heart before it
     }
     if (!helper.isToneModifier(tone) || !helper.isToneModifier(extraTone)) {
       extraTone = tone;
     }
-    out.unshift(personForGender(base, true), tone);
-    out.push(personForGender(base, false), extraTone);
+    out.unshift(personForGender(gender, true), tone);
+    out.push(personForGender(gender, false), extraTone);
     return out.filter((x) => x !== 0);
   }
 

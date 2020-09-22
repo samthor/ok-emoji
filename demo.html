@@ -116,7 +116,7 @@ server:     ${server} ${hex(server)}`;
     const displayBaseParts = (optionStringPart || [serverStringPart]).map((x) => `${x} ${hex(x)}`);
 
     // use 0th just as default sane
-    const stringPart = optionStringPart ? optionStringPart[0] : serverStringPart;
+    const stringPart = optionStringPart && optionStringPart[0] || serverStringPart;
 
     const variants = clientTask.genderVariants(stringPart, version);
     const v = renderVariants(variants);

@@ -36,7 +36,7 @@ const unicode13Has = buildStringHas(unicode13);
  * @param {number} version
  * @return {?Array<string>} output options (could be empty), or null for use raw
  */
-export function restoreForClient(raw, version) {
+export function restoreForClient(raw, version=0) {
   const genderSlots = [];
   let change = false;
 
@@ -166,7 +166,7 @@ export function restoreForClient(raw, version) {
  * @param {number} version
  * @return {!Object<string, string>}
  */
-export function genderVariants(raw, version) {
+export function genderVariants(raw, version=0) {
   const build = (part) => {
     part = part.slice();  // since we expando but store later
     expando(part);
@@ -175,7 +175,7 @@ export function genderVariants(raw, version) {
       return null;
     }
 
-    const {gender, base} = split;
+    const {gender, base, extraTone} = split;
     if (gender === -1) {
       return null;
     }
@@ -196,7 +196,11 @@ export function genderVariants(raw, version) {
 
     if (isGroup(base)) {
       out['c'] = joinForModifiers({...split, gender: helper.runeGenderFauxBoth});
-      deexpando(out['c']);  // always try for group
+
+      for (const k in out) {
+        deexpando(out[k]);
+      }
+      return out;
     }
 
     if (deexpando(out['f'])) {
@@ -246,8 +250,10 @@ export function genderVariants(raw, version) {
  * @param {number} version
  * @return {number} number of tones supported
  */
-export function supportsTone(raw, version) {
+export function supportsTone(raw, version=0) {
   const check = (part) => {
+    expando(part);  // don't splice, we don't return this
+
     const result = splitForModifiers(part);
     if (result === null) {
       return 0;
