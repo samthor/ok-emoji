@@ -116,7 +116,9 @@ suite('client', () => {
   });
 
   test('supportsTone', () => {
-    assert.equal(supportsTone('🧑‍🎄'), 1);
+    assert.strictEqual(supportsTone('🧑‍🤝‍🧑', 121), 2, 'tones 12.1+');
+    assert.strictEqual(supportsTone('🧑‍🤝‍🧑', 100), 0, 'no tones before 12.1');
+    assert.strictEqual(supportsTone('🧑‍🎄', 0), 1);
   });
 
   test('genderVariants', () => {

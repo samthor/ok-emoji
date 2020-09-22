@@ -9,7 +9,7 @@ import {jsdecode} from '../src/string.js';
 import {expando} from '../src/expando.js';
 import {normalizePointAll} from '../src/normalize.js';
 import {validPersonGroup} from '../src/group.js';
-import {isProfession} from '../src/person.js';
+import {isProfession, splitForModifiers} from '../src/modifier.js';
 
 // Valid parts. Contains most things, including roles.
 const partsSet = new Set(Array.from(jsdecode(partsSource)));
@@ -38,9 +38,10 @@ function matchSingle(points) {
     return null;
   }
 
-  // This removes gender from roles.
-  if (points.length === 2 && helper.isGender(points[1])) {
-    points.pop();
+  // See if we're a valid person.
+  const result = splitForModifiers(points);
+  if (result !== null) {
+    return points;
   }
 
   // Check validity of ZWJ'ed emoji.

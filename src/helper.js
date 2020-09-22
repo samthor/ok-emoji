@@ -20,6 +20,7 @@ export const runeBoy = 0x1f466;
 
 export const runeGenderFemale = 0x2640;
 export const runeGenderMale = 0x2642;
+export const runeGenderFauxBoth = 0x2641;  // used as a key for F/M groups, "EARTH"
 
 export const runeHandshake = 0x1f91d;
 export const runeHeart = 0x2764;

@@ -5,25 +5,14 @@ import {
   unicode11,
   unicode12,
   unicode13,
-  modifierBase as modifierBaseSource,
 } from '../src/raw/defs.js';
-import {jsdecode} from '../src/string.js';
-import {singleBase, normalizePointGender, normalizePointAll} from '../src/normalize.js';
-import {validPersonGroup} from '../src/group.js';
-import {isRole} from '../src/person.js';
-
-const unicode13RoleGender = [0x1f470, 0x1f935];
-const unicode14Neuter = [helper.runeCrown, helper.runeMusicalNotes];
-
-const modifierBase = new Set();
-jsdecode(modifierBaseSource).forEach((b) => modifierBase.add(b));
-
-// Remove both "kiss" and "couple with heart". The emoji test data (and vendor implementations) are
-// ambiguous as to whether this is supported.
-//  * These aren't expanded in "emoji-test.txt", but are listed in "emoji-data.txt"
-//  * Only Microsoft supports the modifier, although macOS often eats the tone silently
-modifierBase.delete(0x1f48f);
-modifierBase.delete(0x1f491);
+import {
+  getPersonConfig,
+  splitForModifiers,
+  joinForModifiers,
+  isGroup,
+  isModifierBase,
+} from '../src/modifier.js';
 
 export {default as determineEmojiSupport} from '../src/version.js';
 
@@ -59,6 +48,20 @@ export function restoreForClient(raw, version) {
     if (version >= 140 || version === 0) {
       return part;
     }
+
+    // TODO: fix this by config _then_ unicodeHas
+    // const result = splitForModifiers(part);
+    // if (result !== null) {
+    //   const {base} = result;
+    //   const config = getPersonConfig(base);
+    //   if (config !== null) {
+
+    //     if (version < config.n) {
+          
+    //     }
+
+    //   }
+    // }
 
     if (part.length === 2 && part[0] === helper.runePerson) {
       switch (part[1]) {
@@ -164,154 +167,42 @@ export function restoreForClient(raw, version) {
  * @return {!Object<string, string>}
  */
 export function genderVariants(raw, version) {
-  const build = (/** @type {[]number} */ part) => {
-    part = part.slice();
+  const build = (part) => {
+    part = part.slice();  // since we expando but store later
     expando(part);
-
-    const personGroup = validPersonGroup(part, version);
-    if (personGroup) {
-      if (helper.isFamilyPoints(part)) {
-        return null;  // TODO: family
-      }
-    }
-
-    part = part.map(normalizePointGender).filter((x) => x !== 0);
-    if (part.length === 0) {
-      return [];
-    }
-    const partWithoutTone = part.map(normalizePointAll).filter((x) => x !== 0);
-
-    if (partWithoutTone.length === 1) {
-      const only = part[0];
-      if (isRole(only)) {
-        if (version < 131 && only === 0x1f9d4) {
-          return null;  // beard only a role from 13.1+
-        }
-
-        if (version < 130 && unicode13RoleGender.indexOf(only) !== -1) {
-          return null;  // only added in unicode 13
-        }
-
-        if (version < 120) {
-          // catches a lot of disability emoji introduced in 12.0
-          const check = String.fromCodePoint(only);
-          if (unicode12Has(check)) {
-            return null;
-          }
-        }
-
-        return {
-          'n': part,
-          'f': [...part, helper.runeGenderFemale],
-          'm': [...part, helper.runeGenderMale],
-        };
-      }
-
-      // handles individual people, child, old adult/woman/man
-      const base = singleBase.get(only);
-      if (base !== undefined) {
-        return {
-          'n': [base[0]],
-          'f': [base[1]],
-          'm': [base[2]],
-        };
-      }
-
-      // nothing else to do since we were expando'ed
+    const split = splitForModifiers(part);
+    if (split === null) {
       return null;
     }
 
-    // All other variants should start with runePerson.
-    if (part[0] !== helper.runePerson) {
+    const {gender, base} = split;
+    if (gender === -1) {
       return null;
     }
 
-    const peopleAt = [0];
-    for (let i = 1; i < part.length; ++i) {
-      if (part[i] === helper.runePerson) {
-        peopleAt.push(i);
-      }
+    const config = getPersonConfig(base);
+    if (config === null || version !== 0 && version < config.g) {
+      return null;
     }
-
-    if (peopleAt.length === 1) {
-      // Person must be at 0th position, this is just a person with a profession.
- 
-      const f = part.slice();
-      f[0] = helper.runePersonWoman;
-      const wasExpando = deexpando(f);
-
-      const m = part.slice();
-      m[0] = helper.runePersonMan;
-      wasExpando && deexpando(m);  // don't try again if we didn't hit before
-
-      const out = {
-        f,
-        m,
-      };
-
-      // Remove some gendered professions. Awkwardly retain skin tone.
-      if (partWithoutTone.length === 2) {
-        const profession = partWithoutTone[1];
-
-        // Don't allow "ROYALTY" or "DANCER" until E14.
-        if (version < 140) {
-          if (unicode14Neuter.indexOf(profession) !== -1) {
-            return out;
-          }
-        }
-
-        if (version < 130) {
-          if (profession === 0x1f37c) {
-            // Don't allow "PERSON FEEDING BABY" (and f/m) until E13.
-            return null;
-          }
-          if (profession == helper.runeHolidayTree) {
-            // Don't allow "MX CLAUS" until E13.
-            return out;
-          }
-        }
-
-        if (version < 121) {
-          return out;  // E12.1 introduced all neuter professions (including "hair")
-        }
-
-        if (version < 110) {
-          if (helper.isHairEmoji(profession)) {
-            return null;  // hair added in E11
-          }
-          if (profession === 0x1f9b8 || profession === 0x1f9b9) {
-            return null;  // "SUPERHERO" and "SUPERVILLAN" introduced in E11
-          }
-        }
-      }
-
-      out['n'] = part;
-      return out;
-    }
-
-    // We now have multiple people. This just catches the few groups we have.
-    if (peopleAt.length !== 2 || !personGroup) {
-      return null;  // not sure how this happened
-    }
-
-    const swapGender = (a, b) => {
-      const gen = part.slice();
-      gen[peopleAt[0]] = a;
-      gen[peopleAt[1]] = b;
-      return gen;
-    };
 
     const out = {
-      'f': swapGender(helper.runePersonWoman, helper.runePersonWoman),
-      'm': swapGender(helper.runePersonMan, helper.runePersonMan),
-      'c': swapGender(helper.runePersonWoman, helper.runePersonMan),
+      'f': joinForModifiers({...split, gender: helper.runeGenderFemale}),
+      'm': joinForModifiers({...split, gender: helper.runeGenderMale}),
     };
 
-    if (!(partWithoutTone[1] === helper.runeHandshake && version < 120)) {
-      out['n'] = swapGender(helper.runePerson, helper.runePerson);
+    if (version === 0 || version >= config.n) {
+      out['n'] = joinForModifiers({...split, gender: 0});
     }
 
-    Object.values(out).forEach(deexpando);
+    if (isGroup(base)) {
+      out['c'] = joinForModifiers({...split, gender: helper.runeGenderFauxBoth});
+      deexpando(out['c']);  // always try for group
+    }
+
+    if (deexpando(out['f'])) {
+      deexpando(out['m']);  // only deexpando man if we have to, no neutral single here
+    }
+
     return out;
   };
 
@@ -320,11 +211,9 @@ export function genderVariants(raw, version) {
   const all = [];
   for (const part of iterate(raw)) {
     const out = build(part) || empty;
-
     for (const option in out) {
       uniques.add(option);
     }
-
     all.push({part, out});
   }
 
@@ -349,6 +238,7 @@ export function genderVariants(raw, version) {
   return s;
 }
 
+
 /**
  * Does the passed raw emoji string support skin tones?
  *
@@ -358,35 +248,43 @@ export function genderVariants(raw, version) {
  */
 export function supportsTone(raw, version) {
   const check = (part) => {
-    if (!helper.isGenderPerson(part[0])) {
-      // We don't expando this, as modifierBase also contains the top-level old cases (including
-      // double "holding hands" cases).
-      return modifierBase.has(part[0]);
+    const result = splitForModifiers(part);
+    if (result === null) {
+      return 0;
     }
-    if (helper.isPersonGroup(part)) {
-      // People are in the list of modifiers, but when used as a group, only "holding hands" supports
-      // skin tone modification (it also supports double, see below).
-      return (version === 0 || version >= 120) && part.includes(helper.runeHandshake);
-    }
-    // Not if this is a family.
-    // TODO: future support
-    return !helper.isFamilyPoints(part);
-  };
 
-  // TODO: E12.0 added support for "x holding hands" tones vs the emoji itself
-  // TODO: E14.x+ might add handshake tones
-  for (const part of iterate(raw)) {
-    if (!check(part)) {
-      continue;
+    const {base, tone, extraTone} = result;
+    if (tone === -1) {
+      return 0;
     }
-    if ((part[0] >= 0x1f46b && part[0] <= 0x1f46d) ||
-        (helper.isPersonGroup(part) && part.includes(helper.runeHandshake))) {
+
+    if (base === helper.runeHandshake) {
+      if (version !== 0 && version < 121) {
+        return 0;  // "PEOPLE HOLDING HANDS" only supports tone in 121
+      }
+      return 2;
+    } else if (extraTone !== -1) {
+      if (version !== 0 && version < 131) {
+        return 0;  // other groups only from 13.1
+      }
       return 2;
     }
+
     return 1;
+  };
+
+  let count = 0;
+
+  for (const part of iterate(raw)) {
+    count = Math.max(check(part), count);
+    if (count === 2) {
+      break;
+    }
   }
-  return 0;
+
+  return count;
 }
+
 
 /**
  * Returns the emoji which are different in the two strings. Used for gender comparisons and
@@ -432,6 +330,7 @@ export function delta(from, to) {
   return join(out);
 }
 
+
 /**
  * Normalizes the passed emoji, ensuring the right VS16 etc.
  *
@@ -441,6 +340,7 @@ export function delta(from, to) {
 export function normalize(s) {
   return join(split(s));
 }
+
 
 /**
  * Apply the given skin tone, or none for zero.
@@ -477,7 +377,7 @@ export function applySkinTone(raw, tone) {
       const check = clean[i];
       if (helper.isGenderPerson(check)) {
         personGroup = true;
-      } else if (personGroup || !modifierBase.has(check)) {
+      } else if (personGroup || !isModifierBase(check)) {
         // If we're already a person group, don't modify anything but the people.
         // If we're not in the modifier list, don't modify us.
         continue;
