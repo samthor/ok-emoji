@@ -394,7 +394,9 @@ export function applySkinTone(raw, version = 0, applyTone = 0, applyExtraTone = 
         return null;
     }
 
-    return joinForModifiers({...split, tone: applyTone, extraTone: applyExtraTone});
+    const out = joinForModifiers({...split, tone: applyTone, extraTone: applyExtraTone});
+    deexpando(out);
+    return out;
   };
 
   return join(split(raw).map((part) => apply(part) || part));

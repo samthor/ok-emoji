@@ -189,6 +189,7 @@ suite('client', () => {
     assert.equal(applySkinTone('🧑‍🤝‍🧑', 0, 0x1f3fe), '🧑🏾‍🤝‍🧑🏾');
     assert.equal(applySkinTone('🧑‍🤝‍🧑', 0, 0x1f3ff, 0x1f3fb), '🧑🏿‍🤝‍🧑🏻');
     assert.equal(applySkinTone('🧑🏾‍🤝‍🧑🏾', 120, 0x1f3ff, 0x1f3fb), '🧑🏾‍🤝‍🧑🏾', 'assert no change');
+    assert.equal(applySkinTone('👭🏼', 0, 0x1f3fc), '👭🏼');
   });
 });
 
