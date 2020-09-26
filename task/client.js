@@ -11,7 +11,6 @@ import {
   splitForModifiers,
   joinForModifiers,
   isGroup,
-  isModifierBase,
 } from '../src/modifier.js';
 
 export {default as determineEmojiSupport} from '../src/version.js';

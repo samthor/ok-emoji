@@ -223,7 +223,9 @@ export function joinForModifiers({base, gender, tone, extraTone}) {
     if (base === helper.runeKiss) {
       out.unshift(helper.runeHeart);  // kiss group has heart before it
     }
-    if (!helper.isToneModifier(tone) || !helper.isToneModifier(extraTone)) {
+    if (!helper.isToneModifier(tone)) {
+      tone = extraTone = 0;
+    } else if (!helper.isToneModifier(extraTone)) {
       extraTone = tone;
     }
     out.unshift(personForGender(gender, true), tone);
