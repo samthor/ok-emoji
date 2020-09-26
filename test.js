@@ -183,8 +183,12 @@ suite('client', () => {
   });
 
   test('applySkinTone', () => {
-    assert.equal(applySkinTone('👩🏾‍🍼', 0), '👩‍🍼');
-    assert.equal(applySkinTone('🦷👩‍🍼👩‍🍼', 0x1f3fe), '🦷👩🏾‍🍼👩🏾‍🍼');
+    assert.equal(applySkinTone('👩🏾‍🍼', 0, 0), '👩‍🍼');
+    assert.equal(applySkinTone('🦷👩‍🍼👩‍🍼', 0, 0x1f3fe), '🦷👩🏾‍🍼👩🏾‍🍼');
+    assert.equal(applySkinTone('🦷👩‍🍼👩‍🍼', 0, 0x1f3fe), '🦷👩🏾‍🍼👩🏾‍🍼');
+    assert.equal(applySkinTone('🧑‍🤝‍🧑', 0, 0x1f3fe), '🧑🏾‍🤝‍🧑🏾');
+    assert.equal(applySkinTone('🧑‍🤝‍🧑', 0, 0x1f3ff, 0x1f3fb), '🧑🏿‍🤝‍🧑🏻');
+    assert.equal(applySkinTone('🧑🏾‍🤝‍🧑🏾', 120, 0x1f3ff, 0x1f3fb), '🧑🏾‍🤝‍🧑🏾', 'assert no change');
   });
 });
 

@@ -213,8 +213,8 @@ const personForGender = (gender, isLeft) => {
 /**
  * Joins a modifiable emoji. Doesn't deexpando.
  *
- * @param {!Array<number>} part
  * @param {?{base: number, gender: number, tone: number, extraTone: number}}
+ * @return {!Array<number>}
  */
 export function joinForModifiers({base, gender, tone, extraTone}) {
   const out = [base];

@@ -175,7 +175,7 @@ export function genderVariants(raw, version=0) {
       return null;
     }
 
-    const {gender, base, extraTone} = split;
+    const {gender, base} = split;
     if (gender === -1) {
       return null;
     }
@@ -243,6 +243,26 @@ export function genderVariants(raw, version=0) {
 }
 
 
+function internalBaseToneSupport(base, version, tone, extraTone) {
+  if (tone === -1) {
+    return 0;
+  }
+
+  if (base === helper.runeHandshake) {
+    if (version !== 0 && version < 121) {
+      return 0;  // "PEOPLE HOLDING HANDS" only supports tone in 121
+    }
+    return 2;
+  } else if (extraTone !== -1) {
+    if (version !== 0 && version < 131) {
+      return 0;  // other groups only from 13.1
+    }
+    return 2;
+  }
+  return 1;
+}
+
+
 /**
  * Does the passed raw emoji string support skin tones?
  *
@@ -260,23 +280,7 @@ export function supportsTone(raw, version=0) {
     }
 
     const {base, tone, extraTone} = result;
-    if (tone === -1) {
-      return 0;
-    }
-
-    if (base === helper.runeHandshake) {
-      if (version !== 0 && version < 121) {
-        return 0;  // "PEOPLE HOLDING HANDS" only supports tone in 121
-      }
-      return 2;
-    } else if (extraTone !== -1) {
-      if (version !== 0 && version < 131) {
-        return 0;  // other groups only from 13.1
-      }
-      return 2;
-    }
-
-    return 1;
+    return internalBaseToneSupport(base, version, tone, extraTone);
   };
 
   let count = 0;
@@ -349,51 +353,49 @@ export function normalize(s) {
 
 
 /**
+ * Splits the passed emoji run into individual emoji parts.
+ *
+ * @param {string} s
+ * @return {!Array<string>}
+ */
+export function splitToPart(s) {
+  return split(s).map(single);
+}
+
+
+/**
  * Apply the given skin tone, or none for zero.
  *
  * @param {string} raw
- * @param {number} tone
+ * @param {number=} version
+ * @param {number=} applyTone
+ * @param {number=} applyExtraTone
  * @return {string}
  */
-export function applySkinTone(raw, tone) {
-  if (tone && !helper.isToneModifier(tone)) {
-    throw new Error('not a skinTone');
-  }
-  const out = [];
+export function applySkinTone(raw, version = 0, applyTone = 0, applyExtraTone = -1) {
+  const apply = (part) => {
+    part = part.slice();
+    expando(part);
 
-  for (const e of iterate(raw)) {
-    // Family emoji seem like they could be toned (as they're a ZWJ of others that can also be),
-    // but they're officially unsupported. Don't explicitly clean them either.
-    if (helper.isFamilyPoints(e)) {
-      out.push(e);
-      continue;
+    const split = splitForModifiers(part);
+    if (split === null) {
+      return null;
+    }
+    const {base, tone, extraTone} = split;
+    const count = internalBaseToneSupport(base, version, tone, extraTone);
+
+    switch (count) {
+      case 1:
+        applyExtraTone = -1;
+        break;
+      case 2:
+        break;
+      default:
+        return null;
     }
 
-    const clean = e.filter((p) => !helper.isToneModifier(p));
-    if (!tone) {
-      out.push(clean);
-      continue;
-    }
+    return joinForModifiers({...split, tone: applyTone, extraTone: applyExtraTone});
+  };
 
-    // TODO: this splices skinTone everywhere, we should do one of two things:
-    // * if not 100% tones, set them all
-    // * if 100% applied already, set the first that does not match (double cases)
-    let personGroup = false;
-    for (let i = 0; i < clean.length; ++i) {
-      const check = clean[i];
-      if (helper.isGenderPerson(check)) {
-        personGroup = true;
-      } else if (personGroup || !isModifierBase(check)) {
-        // If we're already a person group, don't modify anything but the people.
-        // If we're not in the modifier list, don't modify us.
-        continue;
-      }
-      clean.splice(i+1, 0, tone);
-      ++i;
-    }
-
-    out.push(clean);
-  }
-
-  return join(out);
+  return join(split(raw).map((part) => apply(part) || part));
 }
