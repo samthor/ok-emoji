@@ -24,6 +24,9 @@ professionsSet.add(helper.runeMusicalNotes);
 const rolesSet = new Set(Array.from(jsdecode(rolesSource)));
 const modifierBaseSet = new Set(Array.from(jsdecode(modifierBaseSource)));
 
+// This incorrectly includes "PEOPLE WRESTLING".
+modifierBaseSet.delete(0x1f93c);
+
 /**
  * This is override source data for professions and roles across versions. This maps runes to their
  * config.
@@ -165,6 +168,9 @@ export function splitForModifiers(part) {
 
   const b = singleBase.get(part[0]);
   if (b === undefined) {
+    if (part.length === 1 && out.tone !== -1) {
+      return out;  // valid modifierBase
+    }
     return null;  // this matches "PERSON", which eventually gives us most matches
   }
   out.base = b[0];

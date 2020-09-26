@@ -65,7 +65,7 @@ suite('server', () => {
       '\u{af3f9}': [],  // unknown/invalid
       '🇨🇬abc🇨🇬': ['🇨🇬', '🇨🇬'],
       '\u{1f6bd}\u{200d}\u{1f6bd}': [],  // toilet cannot combine with toilet
-      '👸🏽': ['\u{1f9d1}\u{200d}\u{1f451}'],
+      '👸🏽': ['\u{1f9d1}\u{200d}\u{1f451}'],  // should not deexpando
       '👩🏾‍🤝‍👨🏻': ['\u{1f9d1}\u{200d}\u{1f91d}\u{200d}\u{1f9d1}'],
       'a🏴󠁧󠁢󠁳󠁣󠁴󠁿q': ['🏴󠁧󠁢󠁳󠁣󠁴󠁿'],
       '👩🏾‍🍼👵🏻': ['👩‍🍼', '👵'],  // gender not removed for run
@@ -79,7 +79,7 @@ suite('server', () => {
 
     Object.keys(tests).forEach((raw) => {
       const expected = tests[raw];
-      assert.deepEqual(normalizeForStorage(raw), expected);
+      assert.deepEqual(normalizeForStorage(raw), expected, `expected ${raw} => ${expected.length} [${expected}]`);
     });
   });
 });
@@ -119,6 +119,8 @@ suite('client', () => {
     assert.strictEqual(supportsTone('🧑‍🤝‍🧑', 121), 2, 'tones 12.1+');
     assert.strictEqual(supportsTone('🧑‍🤝‍🧑', 100), 0, 'no tones before 12.1');
     assert.strictEqual(supportsTone('🧑‍🎄', 0), 1);
+    assert.strictEqual(supportsTone('👃'), 1);
+    assert.strictEqual(supportsTone('👃🏿'), 1);
   });
 
   test('genderVariants', () => {
@@ -183,13 +185,14 @@ suite('client', () => {
   });
 
   test('applySkinTone', () => {
-    assert.equal(applySkinTone('👩🏾‍🍼', 0, 0), '👩‍🍼');
-    assert.equal(applySkinTone('🦷👩‍🍼👩‍🍼', 0, 0x1f3fe), '🦷👩🏾‍🍼👩🏾‍🍼');
-    assert.equal(applySkinTone('🦷👩‍🍼👩‍🍼', 0, 0x1f3fe), '🦷👩🏾‍🍼👩🏾‍🍼');
-    assert.equal(applySkinTone('🧑‍🤝‍🧑', 0, 0x1f3fe), '🧑🏾‍🤝‍🧑🏾');
-    assert.equal(applySkinTone('🧑‍🤝‍🧑', 0, 0x1f3ff, 0x1f3fb), '🧑🏿‍🤝‍🧑🏻');
-    assert.equal(applySkinTone('🧑🏾‍🤝‍🧑🏾', 120, 0x1f3ff, 0x1f3fb), '🧑🏾‍🤝‍🧑🏾', 'assert no change');
-    assert.equal(applySkinTone('👭🏼', 0, 0x1f3fc), '👭🏼');
+    assert.strictEqual(applySkinTone('👩🏾‍🍼', 0, 0), '👩‍🍼');
+    assert.strictEqual(applySkinTone('🦷👩‍🍼👩‍🍼', 0, 0x1f3fe), '🦷👩🏾‍🍼👩🏾‍🍼');
+    assert.strictEqual(applySkinTone('🦷👩‍🍼👩‍🍼', 0, 0x1f3fe), '🦷👩🏾‍🍼👩🏾‍🍼');
+    assert.strictEqual(applySkinTone('🧑‍🤝‍🧑', 0, 0x1f3fe), '🧑🏾‍🤝‍🧑🏾');
+    assert.strictEqual(applySkinTone('🧑‍🤝‍🧑', 0, 0x1f3ff, 0x1f3fb), '🧑🏿‍🤝‍🧑🏻');
+    assert.strictEqual(applySkinTone('🧑🏾‍🤝‍🧑🏾', 120, 0x1f3ff, 0x1f3fb), '🧑🏾‍🤝‍🧑🏾', 'assert no change');
+    assert.strictEqual(applySkinTone('👭🏼', 0, 0x1f3fc), '👭🏼');
+    assert.strictEqual(applySkinTone('👃', 0, 0x1f3fc), '👃🏼');
   });
 });
 

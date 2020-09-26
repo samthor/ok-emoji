@@ -38,6 +38,13 @@ function matchSingle(points) {
     return null;
   }
 
+  // Match expandos (old single rune to multiple). All expandos are considered valid.
+  // This needs to run first, as `splitForModifiers` returns true for the single rune case,
+  // but won't expando us.
+  if (expando(points)) {
+    return points;
+  }
+
   // See if we're a valid person.
   const result = splitForModifiers(points);
   if (result !== null) {
@@ -60,11 +67,6 @@ function matchSingle(points) {
       return points;
     }
     return null;
-  }
-
-  // Match expandos (old single rune to multiple). All expandos are considered valid.
-  if (expando(points)) {
-    return points;
   }
 
   // We have a single, successful point. Let's see if it's even a valid part at all.
