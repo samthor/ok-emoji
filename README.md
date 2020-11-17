@@ -46,4 +46,4 @@ We assume two upcoming changes that are likely to occur in future emoji versions
 * "WOMAN DANCING" and "MAN DANCING" are assumed to be a gender neutral version of "PERSON WITH MUSICAL NOTES"
 
 These are the last two remaining emoji with F/M pairs that do not have a gender neutral equivalent.
-("CROWN" is listed in a Unicode proposal, "MUSICAL NOTES" is less clear.)
+("CROWN" is listed in [a Unicode proposal](https://www.unicode.org/L2/L2020/20189r-person-wearing-crown.pdf), "MUSICAL NOTES" [is less clear](https://www.unicode.org/L2/L2020/20196-gender-skintone-update.pdf).)
