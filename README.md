@@ -35,3 +35,15 @@ Emoji 13 made minor but interesting changes:
   (ok-emoji can expando this to the "MAN/WOMAN + ZWJ + HOLIDAY TREE" for manipulation.)
 
 * It repurposed two old gendered emoji to create neutral "PERSON IN TUXEDO" and "PERSON IN VEIL", with new role variants ("MALE/FEMALE" roles).
+
+* It added gendered emoji for "PERSON: BEARD"
+
+### 2021+ (E14?)
+
+We assume two upcoming changes that are likely to occur in future emoji versions:
+
+* "PRINCESS" and "PRINCE" are assumed to be a gender neutral version of "PERSON WITH CROWN"
+* "WOMAN DANCING" and "MAN DANCING" are assumed to be a gender neutral version of "PERSON WITH MUSICAL NOTES"
+
+These are the last two remaining emoji with F/M pairs that do not have a gender neutral equivalent.
+("CROWN" is listed in a Unicode proposal, "MUSICAL NOTES" is less clear.)
