@@ -47,3 +47,6 @@ We assume two upcoming changes that are likely to occur in future emoji versions
 
 These are the last two remaining emoji with F/M pairs that do not have a gender neutral equivalent.
 ("CROWN" is listed in [a Unicode proposal](https://www.unicode.org/L2/L2020/20189r-person-wearing-crown.pdf), "MUSICAL NOTES" [is less clear](https://www.unicode.org/L2/L2020/20196-gender-skintone-update.pdf).)
+
+There also exists "PREGNANT WOMAN" which is specifically gendered.
+A future [recommendation](https://www.unicode.org/L2/L2020/20242r2-emoji-recs-14.pdf) suggests adding "PERSON WITH SWOLLEN BELLY", but ok-emoji does not address this (the singular "PREGNANT WOMAN" is not seen as gendered since there's no other versions).
