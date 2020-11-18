@@ -2,28 +2,20 @@
 
 import fs from 'fs';
 
+import {parser} from './gen/parser.js';
+
 const data = fs.readFileSync('emoji-test.txt', 'utf-8');
-const lines = data.split('\n');
+const all = parser(data);
 
 const byVersion = {};
 
-for (const line of lines) {
-  if (!line.includes('fully-qualified')) {
-    continue;
-  }
+for (const {emoji, version, description} of all) {
+  const v = `E${version.toFixed(1)}`;
 
-  const comment = line.indexOf('#');
-  if (comment < 60) {
-    continue;
+  if (!(v in byVersion)) {
+    byVersion[v] = [];
   }
-
-  const [emoji, version, ...rest] = line.substr(comment + 1).trim().split(' ');
-  const description = rest.join(' ')
-
-  if (!(version in byVersion)) {
-    byVersion[version] = [];
-  }
-  const target = byVersion[version];
+  const target = byVersion[v];
 
   target.push({emoji, description});
 }
