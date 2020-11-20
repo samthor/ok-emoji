@@ -1,4 +1,10 @@
 
+/**
+ * Parses emoji-test data into an array.
+ *
+ * @param {string} raw
+ * @return {{emoji: string, version: number, description: string}[]}
+ */
 export function parser(raw) {
   const lines = raw.split('\n');
   const all = [];

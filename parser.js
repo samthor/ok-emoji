@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+/**
+ * @fileoverview This just blits out emoji under their version number for a demo.
+ */
+
 import fs from 'fs';
 
 import {parser} from './gen/parser.js';
