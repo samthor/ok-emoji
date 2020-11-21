@@ -9,7 +9,8 @@
   "devDependencies": {
     "chai": "^4.1.2",
     "headless-test": "^1.0.3",
-    "mocha": "^7.1.2"
+    "mocha": "^7.1.2",
+    "slugify": "^1.4.6"
   },
   "repository": {
     "type": "git",
