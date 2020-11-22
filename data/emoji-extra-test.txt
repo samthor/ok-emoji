@@ -1,0 +1,22 @@
+# Non-standard emoji.
+
+# group: Other
+
+# subgroup: microsoft-cats
+1F431 200D 1F464                           ; fully-qualified     # 🐱‍👤 ninja cat
+1F431 200D 1F680                           ; fully-qualified     # 🐱‍🚀 astronaut cat
+1F431 200D 1F409                           ; fully-qualified     # 🐱‍🐉 dinosaur cat
+1F431 200D 1F4BB                           ; fully-qualified     # 🐱‍💻 hacker cat
+1F431 200D 1F453                           ; fully-qualified     # 🐱‍👓 hipster cat
+1F431 200D 1F3CD FE0F                      ; fully-qualified     # 🐱‍🏍️ stunt cat
+
+# group: People & Body
+
+# subgroup: person-activity
+1F9D1 200D 1F451                           ; fully-qualified     # 🧑‍👑 royalty
+1F9D1 200D 1F3B6                           ; fully-qualified     # 🧑‍🎶 dancer
+
+# group: Travel & Places
+
+# subgroup: place-building
+E50A                                       ; fully-qualified     #  Shibuya

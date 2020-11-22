@@ -129,6 +129,7 @@ export function normalizeForStorage(raw, retainGender=undefined) {
       // this is somewhat special but we revert to "NUCLEAR FAMILY" here to remove gender
       out[0] = [helper.runeNuclearFamily];
     } else if (solo.length !== 1) {
+      // we don't normalize single expando'ed points (this might be e.g., "OLD WOMAN")
       solo = solo.map(normalizePointAll).filter((x) => x !== 0);
       out[0] = solo;
     }

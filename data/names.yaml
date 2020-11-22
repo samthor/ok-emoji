@@ -1,0 +1,53 @@
+"#️⃣":
+- keycap-pound
+- keycap-number
+- pound
+- number
+- hash
+"*️⃣":
+- keycap-asterisk
+- asterisk
+0️⃣:
+- keycap-zero
+- zero
+- "0"
+1️⃣:
+- keycap-one
+- one
+- "1"
+2️⃣:
+- keycap-two
+- two
+- "2"
+3️⃣:
+- keycap-three
+- three
+- "3"
+4️⃣:
+- keycap-four
+- four
+- "4"
+5️⃣:
+- keycap-five
+- five
+- "5"
+6️⃣:
+- keycap-six
+- six
+- "6"
+7️⃣:
+- keycap-seven
+- seven
+- "7"
+8️⃣:
+- keycap-eight
+- eight
+- "8"
+9️⃣:
+- keycap-nine
+- nine
+- "9"
+🔟:
+- keycap-ten
+- ten
+- "10"

@@ -20,6 +20,14 @@ while (singleBaseSource.length !== 0) {
   singleBase.set(source[2], source);
 }
 
+/**
+ * @param {number} point
+ * @return {boolean} whether this is an unmodified single base
+ */
+export function isSingleBase(point) {
+  return singleBase.has(point);
+}
+
 export function normalizePointGender(point) {
   if (helper.isGender(point)) {
     return 0;
