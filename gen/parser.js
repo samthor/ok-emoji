@@ -50,7 +50,7 @@ export function parser(raw) {
       continue;
     }
 
-    let version = -1.0;
+    let version = 0.0;
     const [emoji, ...rest] = comment.split(' ');
 
     if ((rest[0] ?? '').startsWith('E')) {

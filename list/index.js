@@ -6,16 +6,15 @@
 
 import fs from 'fs';
 import path from 'path';
-import YAML from 'yaml';
 
-import {Corpus} from './corpus.js';
 import {parser} from '../gen/parser.js';
 import {isRetainedGenderPerson, normalize} from './normalize.js';
 import {genderVariants} from '../task/client.js';
+import nameForSubGroup from '../data/subgroup.js';
+import nameForEmoji from '../data/namer.js';
 
 
 const {pathname: dataPath} = new URL('../data/', import.meta.url);
-
 
 // Index all emoji and create normalized set.
 function prepareEmojiModes(all) {
@@ -23,7 +22,7 @@ function prepareEmojiModes(all) {
   const variantsIndex = {};
   const modifierBase = new Set();
   for (const data of all) {
-    const {emoji, version, description, group, subgroup} = data;
+    const {emoji, version, description, group, subgroup: subgroupRaw} = data;
     const n = normalize(emoji);
 
     if (/ skin tone\b/.test(description)) {
@@ -31,17 +30,20 @@ function prepareEmojiModes(all) {
       continue;
     }
 
+    const name = nameForEmoji(description);
+
+    variantsIndex[emoji] = {version, name};
     if (emoji !== n) {
-      variantsIndex[emoji] = {version, description};
       continue;
     }
 
+    const subgroup = nameForSubGroup(subgroupRaw);
+
     normalized[n] = {
-      modifier: false,
       group,
       subgroup,
       emoji,
-      description,
+      name,
       version,
     };
   }
@@ -67,60 +69,27 @@ const emojiSourceFiles = ['emoji-test.txt', 'emoji-extra-test.txt'];
 const all = loadDataFiles(...emojiSourceFiles);
 
 const {normalized, variantsIndex} = prepareEmojiModes(all);
-const corpus = new Corpus();
-
-const extraNames = YAML.parse(fs.readFileSync(path.join(dataPath, 'names.yaml'), 'utf-8'));
-// for (const k in extraNames) {
-//   const n = normalize(k);
-//   if (n !== k) {
-//     extraNames[n] = (extraNames[n] || []).concat(extraNames[k]);
-//     delete extraNames[k];
-//   }
-// }
+const output = [];
 
 for (const k in normalized) {
   const variantsSource = isRetainedGenderPerson(k) ? {} : genderVariants(k)
   const hasVariants = Object.keys(variantsSource).length !== 0;
 
   const ev = {};
-  delete variantsSource.n;
   for (const variant in variantsSource) {
     const e = variantsSource[variant];
-    const {description, version} = variantsIndex[e];
-    ev[variant] = {description, version, emoji: e};
+    const {name, version} = variantsIndex[e];
+    ev[variant] = {name, version, emoji: e};
   }
 
   const normalizedData = normalized[k];
-  const {description} = normalizedData;
   if (hasVariants) {
     Object.assign(normalizedData, {
       variants: ev,
     });
   }
 
-  if (!corpus.add(description, normalizedData)) {
-    throw new Error(`got duplicate page: ${description}`);
-  }
-
-  // Try listed extra names.
-  (extraNames[k] || []).forEach((name) => {
-    if (!corpus.link(description, name)) {
-      throw new Error(`got duplicate link: ${name}`);
-    }
-  });
-  delete extraNames[k];
-
-  // Try a few optional extra names. Don't be so strict about this.
-  if (description.startsWith('flag: ')) {
-    corpus.link(description, description.substr('flag: '.length));
-  } else {
-    corpus.link(description, description.replace(/\s+/g, ''));
-  }
+  output.push(normalizedData);
 }
 
-const remainingExtraNames = Object.keys(extraNames).length;
-if (remainingExtraNames) {
-  throw new Error(`had ${remainingExtraNames} extraNames`);
-}
-
-console.info(JSON.stringify(corpus.all(), undefined, 2));
+console.info(JSON.stringify(output, undefined, 2));

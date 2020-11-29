@@ -28,7 +28,5 @@
     "url": "https://github.com/samthor/ok-emoji/issues"
   },
   "homepage": "https://github.com/samthor/ok-emoji#readme",
-  "dependencies": {
-    "yaml": "^1.10.0"
-  }
+  "dependencies": {}
 }
