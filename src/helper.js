@@ -30,36 +30,64 @@ export const runeNuclearFamily = 0x1f46a;
 export const runeCrown = 0x1f451;
 export const runeMusicalNotes = 0x1f3b6;
 
+/**
+ * @param {number} r
+ * @return {boolean}
+ */
 export function isFlagPoint(r) {
   return r >= runeFlagA && r <= runeFlagZ;
 }
 
+/**
+ * @param {number} r
+ * @return {boolean}
+ */
 export function isFamilyMember(r) {
   return r >= 0x1f466 && r <= 0x1f469;
 }
 
+/**
+ * @param {number} r
+ * @return {boolean}
+ */
 export function isToneModifier(r) {
   return r >= 0x1f3fb && r <= 0x1f3ff;
 }
 
+/**
+ * @param {number} r
+ * @return {boolean}
+ */
 export function isHairEmoji(r) {
   return r >= 0x1f9b0 && r <= 0x1f9b3;
 }
 
+/**
+ * @param {number} r
+ * @return {boolean}
+ */
 export function isGenderPerson(r) {
 	return r === runePersonWoman || r === runePersonMan || r === runePerson;
 }
 
+/**
+ * @param {number} r
+ * @return {boolean}
+ */
 export function isGender(r) {
 	return r === runeGenderFemale || r === runeGenderMale;
 }
 
+/**
+ * @param {number} r
+ * @return {boolean}
+ */
 export function isTagRune(r) {
   return r >= runeTagSpace && r <= runeTagCancel;
 }
 
 /**
- * @param {!Array<number>} p points to check
+ * @param {number[]} p points to check
  * @return {boolean} whether this is probably a person group (not a Family)
  */
 export function isPersonGroup(p) {
@@ -80,7 +108,7 @@ export function isPersonGroup(p) {
 }
 
 /**
- * @param {!Array<number>} points points to check
+ * @param {number[]} points points to check
  * @return {boolean} whether this is a Family
  */
 export function isFamilyPoints(points) {

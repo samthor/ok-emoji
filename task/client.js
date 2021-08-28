@@ -15,6 +15,7 @@ import {
 
 export {default as determineEmojiSupport} from '../src/version.js';
 
+/** @type {(source: string) => ((check: string) => boolean)} */
 const buildStringHas = (source) => {
   const data = split(source).map(single);
   const s = /** @type {!Set<string>} */ (new Set(data));
@@ -33,12 +34,14 @@ const unicode13Has = buildStringHas(unicode13);
  *
  * @param {string} raw
  * @param {number} version
- * @return {?Array<string>} output options (could be empty), or null for use raw
+ * @return {string[]|null} output options (could be empty), or null for use raw
  */
 export function restoreForClient(raw, version=0) {
+  /** @type {number[][]} */
   const genderSlots = [];
   let change = false;
 
+  /** @type {(part: number[]) => number[]|null} */
   const rewriter = (part) => {
     if (deexpando(part)) {
       change = true;
@@ -132,18 +135,19 @@ export function restoreForClient(raw, version=0) {
     return part;
   };
 
-  let work = split(raw).map(rewriter);
-  if (!change && work.indexOf(null) === -1 && genderSlots.length === 0) {
+  let unfilteredWork = split(raw).map(rewriter);
+  if (!change && unfilteredWork.indexOf(null) === -1 && genderSlots.length === 0) {
     return null;  // nothing actually changed
   }
 
-  work = work.filter((x) => x !== null);
+  const work = /** @type {number[][]} */ (unfilteredWork.filter((x) => x !== null));
   if (work.length === 0) {
     return [];
   } else if (genderSlots.length === 0) {
     return [join(work)];
   }
 
+  /** @type {[number[][], number[][]]} */
   const options = [[], []];
   for (const part of work) {
     if (part[0] !== -1) {
@@ -152,12 +156,17 @@ export function restoreForClient(raw, version=0) {
       continue;
     }
     part.shift();
-    const slot = genderSlots.shift();
+    // nb. this has same length (?) as above
+    const slot = /** @type {[number, number]} */ (genderSlots.shift());
     options[0].push([slot[0], ...part])
     options[1].push([slot[1], ...part])
   }
   return options.map(join);
 }
+
+
+/** @typedef {{f?: number[], m?: number[], c?: number[], n?: number[]}} */
+var GenderVariants;
 
 
 /**
@@ -166,56 +175,62 @@ export function restoreForClient(raw, version=0) {
  * @return {!Object<string, string>}
  */
 export function genderVariants(raw, version=0) {
+  const empty = {};
+
+  /** @type {(part: number[]) => GenderVariants} */
   const build = (part) => {
     part = part.slice();  // since we expando but store later
     expando(part);
     const split = splitForModifiers(part);
     if (split === null) {
-      return null;
+      return empty;
     }
 
     const {gender, base} = split;
     if (gender === -1) {
-      return null;
+      return empty;
     }
 
     const config = getPersonConfig(base);
     if (config === null || version !== 0 && version < config.g) {
-      return null;
+      return empty;
     }
 
+    /** @type {GenderVariants & {f: number[], m: number[]}} */
     const out = {
-      'f': joinForModifiers({...split, gender: helper.runeGenderFemale}),
-      'm': joinForModifiers({...split, gender: helper.runeGenderMale}),
+      f: joinForModifiers({...split, gender: helper.runeGenderFemale}),
+      m: joinForModifiers({...split, gender: helper.runeGenderMale}),
     };
 
     if (version === 0 || version >= config.n) {
-      out['n'] = joinForModifiers({...split, gender: 0});
+      out.n = joinForModifiers({...split, gender: 0});
     }
 
     if (isGroup(base)) {
-      out['c'] = joinForModifiers({...split, gender: helper.runeGenderFauxBoth});
+      out.c = joinForModifiers({...split, gender: helper.runeGenderFauxBoth});
 
       for (const k in out) {
+        // @ts-ignore We know this value exists, because we're enumerating through it.
         deexpando(out[k]);
       }
       return out;
     }
 
-    if (deexpando(out['f'])) {
-      deexpando(out['m']);  // only deexpando man if we have to, no neutral single here
+    if (deexpando(out.f)) {
+      deexpando(out.m);  // only deexpando man if we have to, no neutral single here
     }
 
     return out;
   };
 
-  const empty = {};
+  /** @type {Set<keyof GenderVariants>} */
   const uniques = new Set();
+  /** @type {{part: number[], out: GenderVariants}[]} */
   const all = [];
   for (const part of iterate(raw)) {
-    const out = build(part) || empty;
+    const out = build(part);
     for (const option in out) {
-      uniques.add(option);
+      uniques.add(/** @type {keyof GenderVariants} */ (option));
     }
     all.push({part, out});
   }
@@ -227,21 +242,34 @@ export function genderVariants(raw, version=0) {
   const uniqueArray = [...uniques];
   uniqueArray.sort();
 
+  /** @type {{[variant: string]: number[][]}} */
   const final = {};
   uniqueArray.forEach((each) => final[each] = []);
 
   for (const {part, out} of all) {
     uniqueArray.forEach((each) => {
-      final[each].push(out[each] || part);
+      const arr = /** @type {number[][]} */ (final[each]);
+      arr.push(out[each] ?? part);
     });
   }
 
+  /** @type {{[name: string]: string}} */
   const s = {};
-  uniqueArray.forEach((each) => s[each] = join(final[each]));
+  uniqueArray.forEach((each) => {
+    const arr = /** @type {number[][]} */ (final[each]);
+    s[each] = join(arr);
+  });
   return s;
 }
 
 
+/**
+ * @param {number} base
+ * @param {number} version
+ * @param {number} tone
+ * @param {number} extraTone
+ * @return {0 | 1 | 2}
+ */
 function internalBaseToneSupport(base, version, tone, extraTone) {
   if (tone === -1) {
     return 0;
@@ -267,9 +295,10 @@ function internalBaseToneSupport(base, version, tone, extraTone) {
  *
  * @param {string} raw
  * @param {number} version
- * @return {number} number of tones supported
+ * @return {0 | 1 | 2} number of tones supported
  */
 export function supportsTone(raw, version=0) {
+  /** @type {(part: number[]) => 0 | 1 | 2} */
   const check = (part) => {
     expando(part);  // don't splice, we don't return this
 
@@ -291,7 +320,7 @@ export function supportsTone(raw, version=0) {
     }
   }
 
-  return count;
+  return /** @type {0 | 1 | 2} */ (count);
 }
 
 
@@ -312,6 +341,7 @@ export function delta(from, to) {
     return to;
   }
 
+  /** @type {(a: number[], b: number[]) => boolean} */
   const eq = (a, b) => {
     if (a.length !== b.length) {
       return false;
@@ -328,8 +358,8 @@ export function delta(from, to) {
 
   const out = [];
   while (fi.length && ti.length) {
-    const fn = fi.shift();
-    const tn = ti.shift();
+    const fn = /** @type {number[]} */ (fi.shift());
+    const tn = /** @type {number[]} */ (ti.shift());
 
     if (!eq(fn, tn)) {
       out.push(tn);
@@ -355,7 +385,7 @@ export function normalize(s) {
  * Splits the passed emoji run into individual emoji parts.
  *
  * @param {string} s
- * @return {!Array<string>}
+ * @return {string[]}
  */
 export function splitToPart(s) {
   return split(s).map(single);
@@ -372,6 +402,7 @@ export function splitToPart(s) {
  * @return {string}
  */
 export function applySkinTone(raw, version = 0, applyTone = 0, applyExtraTone = -1) {
+  /** @type {(part: number[]) => number[]|null} */
   const apply = (part) => {
     part = part.slice();
     expando(part);

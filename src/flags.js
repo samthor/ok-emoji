@@ -8,7 +8,7 @@ import {runeFlagA} from './helper.js';
 
 /**
  * @param {string} source flags in "aaabac" form
- * @return {!Set<string>} set of valid flags made up of regional indicators
+ * @return {Set<string>} set of valid flags made up of regional indicators
  */
 function buildSet(source) {
   const all = new Set();
@@ -38,6 +38,6 @@ export function isFlag(pointA, pointB) {
 }
 
 /**
- * @type {!Set<string>}
+ * @type {Set<string>}
  */
 export default flagSet;

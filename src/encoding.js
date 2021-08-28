@@ -24,7 +24,7 @@ import * as helper from './helper.js';
 //   * Any flag "AB" is returned as a pair (including invalid ones), but correct wins over three
 
 /**
- * @type {!Set<number>} emoji base which require VS16
+ * @type {Set<number>} emoji base which require VS16
  */
 const variationSet = new Set(jsdecode(variationSource));
 
@@ -38,7 +38,7 @@ export function isVariation(rune) {
 
 /**
  * @param {string} raw to split
- * @return {!Array<!Array<number>>} split emoji string
+ * @return {number[][]} split emoji string
  */
 export function split(raw) {
   return Array.from(iterate(raw));
@@ -47,7 +47,7 @@ export function split(raw) {
 /**
  * Exported for use in measure. Otherwise internal.
  *
- * @param {!Array<number>} out
+ * @param {number[]} out
  * @param {string} s
  * @param {number} i
  * @return {number}
@@ -58,7 +58,7 @@ export function internalIterateStep(out, s, i) {
     return i;
   }
 
-  let curr = s.codePointAt(i);
+  let curr = /** @type {number} */ (s.codePointAt(i));
   if (curr === helper.runeZWJ) {
     return i + 1;  // zwj is single, invalid
   } else if (helper.isTagRune(curr)) {
@@ -69,7 +69,7 @@ export function internalIterateStep(out, s, i) {
   if (helper.isFlagPoint(curr)) {
     i += 2;  // flag is double
 
-    const next = s.codePointAt(i);
+    const next = s.codePointAt(i) ?? 0;
     if (!helper.isFlagPoint(next)) {
       return i;
     }
@@ -79,7 +79,7 @@ export function internalIterateStep(out, s, i) {
     const check = String.fromCodePoint(curr, next);
     if (!flags.has(check)) {
       // we've found points "ABC"; "AB" isn't valid, we don't care if "BC" is, just yield three
-      const supernext = s.codePointAt(i);
+      const supernext = s.codePointAt(i) ?? 0;
       if (helper.isFlagPoint(supernext)) {
         out.push(supernext);
         return i + 2;
@@ -98,10 +98,10 @@ export function internalIterateStep(out, s, i) {
       i += 1;
     }
 
-    curr = s.codePointAt(i);
+    curr = s.codePointAt(i) ?? 0;
     if (curr === helper.runeVS16) {
       i += 1;  // step over VS16
-      curr = s.codePointAt(i);
+      curr = s.codePointAt(i) ?? 0;
     }
 
     if (helper.isTagRune(curr)) {
@@ -112,7 +112,7 @@ export function internalIterateStep(out, s, i) {
         if (i === length) {
           return i;
         }
-        curr = s.codePointAt(i);
+        curr = s.codePointAt(i) ?? 0;
         if (!helper.isTagRune(curr)) {
           break;
         } else if (curr === helper.runeTagCancel) {
@@ -137,7 +137,7 @@ export function internalIterateStep(out, s, i) {
       break;  // trailing ZWJ
     }
 
-    curr = s.codePointAt(i);
+    curr = s.codePointAt(i) ?? 0;
     if (helper.isTagRune(curr) || helper.isFlagPoint(curr)) {
       break;  // invalid ZWJ sequence, don't include
     }
@@ -151,10 +151,11 @@ export function internalIterateStep(out, s, i) {
  * Iterate over a longer string containing emoji. Yields single emoji or character.
  *
  * @param {string} s to parse, containing zero to many emoji
- * @yields {!Array<number>} single emoji runs
+ * @yields {number[]} single emoji runs
  */
 export function *iterate(s) {
   const length = s.length;
+  /** @type {number[]} */
   const out = [];
   let i = 0;
 
@@ -170,7 +171,7 @@ export function *iterate(s) {
 /**
  * Joins a series of single emoji for display.
  *
- * @param {!Array<!Array<number>>} arr
+ * @param {number[][]} arr
  * @return {string}
  */
 export function join(arr) {
@@ -180,8 +181,8 @@ export function join(arr) {
 /**
  * Appends a single part to the passed array. Starts with a ZWJ if needed.
  *
- * @param {!Array<number>} out
- * @param {!Array<number>} points
+ * @param {number[]} out
+ * @param {number[]} points
  * @param {number} i where within points to operate
  * @return {number} new position within points
  */
@@ -251,10 +252,11 @@ function internalSinglePart(out, points, i) {
  *
  * Adds VS16 as needed for emoji requiring the selector.
  *
- * @param {!Array<number>} points
+ * @param {number[]} points
  * @return {string}
  */
 export function single(points) {
+  /** @type {number[]} */
   const out = [];
 
   const is = internalSinglePart.bind(null, out, points);

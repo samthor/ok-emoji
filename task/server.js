@@ -21,8 +21,8 @@ const multiSet = new Set(split(multiSource).map((points) => String.fromCodePoint
 /**
  * Ensures that the passed emoji is valid, removing skin tone modifiers. May return the input array.
  *
- * @param {!Array<number>} points
- * @return {?Array<number>}
+ * @param {number[]} points
+ * @return {number[]|null}
  */
 function matchSingle(points) {
   // Match valid flags. Disallow invalid ones.
@@ -104,9 +104,10 @@ function matchSingle(points) {
  *
  * @param {string} raw
  * @param {boolean=} retainGender whether to always retain gender information
- * @return {!Array<string>}
+ * @return {string[]}
  */
 export function normalizeForStorage(raw, retainGender=undefined) {
+  /** @type {number[][]} */
   const out = [];
 
   for (const part of iterate(raw)) {

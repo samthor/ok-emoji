@@ -1,4 +1,7 @@
 
+/**
+ * @type {{[subgroup: string]: boolean|string}}
+ */
 const overrides = {
   'cat-face': true,
   'monkey-face': true,
@@ -20,6 +23,9 @@ function capitalize(s) {
   return s;
 }
 
+/**
+ * @param {string} subgroup
+ */
 export default function nameForSubGroup(subgroup) {
   const override = overrides[subgroup];
   if (typeof override === 'string') {

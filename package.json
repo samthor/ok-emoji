@@ -7,6 +7,7 @@
   "module": "index.js",
   "jsnext:main": "index.js",
   "devDependencies": {
+    "@types/node": "^16.7.4",
     "chai": "^4.1.2",
     "headless-test": "^1.0.3",
     "mocha": "^7.1.2",
@@ -27,6 +28,5 @@
   "bugs": {
     "url": "https://github.com/samthor/ok-emoji/issues"
   },
-  "homepage": "https://github.com/samthor/ok-emoji#readme",
-  "dependencies": {}
+  "homepage": "https://github.com/samthor/ok-emoji#readme"
 }

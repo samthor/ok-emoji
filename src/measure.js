@@ -20,20 +20,28 @@ function buildCanvas(width, height) {
   throw new TypeError(`no canvas available`);
 }
 
-function buildContextSupported(debug) {
-  const w = 2;
-  const h = 2;
+/**
+ * @param {boolean} debug
+ */
+function buildContextSupported(debug = false) {
+  const fixedWidthAlways = 2;
+  const fixedHeightAlways = 2;
   const fontFamily = `'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Helvetica Neue', 'Helvetica', monospace, sans-serif`;
-  const fontSize = h + 0.5;
+  const fontSize = fixedHeightAlways + 0.5;
 
   // The exact position/size of the font used isn't perfect, but it doesn't matter: the goal is to
   // compare specifically to a poor glyph.
 
-  const canvas = buildCanvas(w, h);
-  const context = canvas.getContext('2d');
+  const canvas = buildCanvas(fixedWidthAlways, fixedHeightAlways);
+  const context = /** @type {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} */ (canvas.getContext('2d'));
+  if (!context) {
+    throw new Error(`no context`)
+  }
+
   context.fillStyle = 'rgb(64, 96, 32)';
   context.textBaseline = 'top';
 
+  /** @type {(s: string) => void} */
   const render = (s) => {
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.fillText(s, -1, -1);
@@ -43,26 +51,25 @@ function buildContextSupported(debug) {
    * Finds a font size for this device which maximizes our chance of detecting
    * valid or invalid emoji. We use a 2x2 grid, so look for 75% worth of data.
    *
-   * @return {!Uint32Array<number>} always four 32-bit ints
+   * @return {Uint32Array} always four 32-bit ints
    */
   function prepareEmpty() {
     let offset = 0.0;
     let moveOffsetBy = 0.1;
-    let found = null;
+    const found = new Uint32Array(4);
     let count = 0;
 
     for (let j = 0; j < 10; ++j) {
       context.font = `italic ${fontSize + offset}px ${fontFamily}`;
       render('\uffff');  // always unsupported
 
-      const emptyData = context.getImageData(0, 0, w, h);
-      const out = new Uint32Array(emptyData.data.buffer);
+      const emptyData = context.getImageData(0, 0, fixedWidthAlways, fixedHeightAlways);
+      found.set(new Uint32Array(emptyData.data.buffer), 0);
 
       // Count the number of pixels that have any data. F
-      const cand = out.reduce((prev, ours) => ours !== 0 ? prev + 1 : prev, 0);
+      const cand = found.reduce((prev, ours) => ours !== 0 ? prev + 1 : prev, 0);
       if (cand > count) {
         count = cand;
-        found = out;
         if (cand >= 3) {
           break;
         }
@@ -82,7 +89,7 @@ function buildContextSupported(debug) {
   }
 
   // If we're asked to debug, then add the canvas to screen.
-  if (debug && typeof document !== 'undefined') {
+  if (debug && canvas instanceof HTMLCanvasElement) {
     canvas.style.width = `${canvas.width * 10}px`;
     canvas.style.height = `${canvas.height * 10}px`;
     canvas.style.imageRendering = 'pixelated';
@@ -142,7 +149,7 @@ function buildContextSupported(debug) {
     let hasTone = false;
 
     while (i < len) {
-      const r = s.codePointAt(i);
+      const r = s.codePointAt(i) ?? 0;
 
       if (r === 0x200d) {
         // just work out if the thing on the left is shorter than the whole
@@ -174,13 +181,14 @@ function buildContextSupported(debug) {
 
     render(s);
 
-    const {data} = context.getImageData(0, 0, w, h);
+    const {data} = context.getImageData(0, 0, fixedWidthAlways, fixedHeightAlways);
     const u32 = new Uint32Array(data.buffer);
     const support = u32[0] !== e0 || u32[1] !== e1 || u32[2] !== e2 || u32[3] !== e3;
 
     return support;
   }
 
+  /** @type {(s: string) => boolean} */
   return (s) => {
     const length = s.length;
     let i = 0;
@@ -189,6 +197,7 @@ function buildContextSupported(debug) {
     while (i < length) {
       i = to;  // reset step
 
+      /** @type {number[]} */
       const points = [];
       to = internalIterateStep(points, s, i);
       if (isFlagPoint(points[0])) {
@@ -206,6 +215,19 @@ function buildContextSupported(debug) {
 
 }
 
+
+/**
+ * Checks a single emoji for validity. Has unknown results for sequences of more than one.
+ *
+ * @param {string} s to check
+ * @return {boolean}
+ */
+ export let supported = (s) => {
+  prepare();
+  return supported(s);
+};
+
+
 /**
  * Prepares the measure module. This will throw an exception if we're e.g. in Node where rendering
  * is unsupported.
@@ -220,15 +242,4 @@ export function prepare(debug = false) {
     supported = () => true;
     throw e;
   }
-}
-
-/**
- * Checks a single emoji for validity. Has unknown results for sequences of more than one.
- *
- * @param {string} s to check
- * @return {boolean}
- */
-export function supported(s) {
-  prepare();
-  return supported(s);
 }

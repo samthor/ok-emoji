@@ -28,6 +28,10 @@ export function isSingleBase(point) {
   return singleBase.has(point);
 }
 
+/**
+ * @param {number} point
+ * @return {number}
+ */
 export function normalizePointGender(point) {
   if (helper.isGender(point)) {
     return 0;
@@ -39,7 +43,11 @@ export function normalizePointGender(point) {
   return point;
 }
 
-export function normalizePointAll(point) {
+/**
+ * @param {number} point
+ * @return {number}
+ */
+ export function normalizePointAll(point) {
   if (helper.isToneModifier(point)) {
     return 0;
   }

@@ -24,7 +24,7 @@ const expandoWomanDancing = 0x1f483;
 const expandoManDancing = 0x1f57a;
 
 /**
- * @type {!Array<number|!Array<number>>} maps simple old-style emoji to their effective expansion
+ * Maps simple old-style emoji to their effective expansion
  */
 const complexExpandoSource = [
   expandoWomenHoldingHands, [helper.runePersonWoman, helper.runeHandshake, helper.runePersonWoman],
@@ -39,17 +39,20 @@ const simpleExpandoSource = [
   [0, expandoWomanDancing, expandoManDancing], helper.runeMusicalNotes,
 ];
 
+/** @type {Map<number, number[]>} */
 const expandos = new Map();
+
+/** @type {Map<number, number[]>} */
 const deexpandoSimple = new Map();
 
 for (let i = 0; i < complexExpandoSource.length; i += 2) {
-  const source = complexExpandoSource[i+0];
-  const expando = complexExpandoSource[i+1];
+  const source = /** @type {number} */ (complexExpandoSource[i+0]);
+  const expando = /** @type {number[]} */ (complexExpandoSource[i+1]);
   expandos.set(source, expando);
 }
 for (let i = 0; i < simpleExpandoSource.length; i += 2) {
-  const source = simpleExpandoSource[i+0];
-  const profession = simpleExpandoSource[i+1];
+  const source = /** @type {number[]} */ (simpleExpandoSource[i+0]);
+  const profession = /** @type {number} */ (simpleExpandoSource[i+1]);
 
   const people = [helper.runePerson, helper.runePersonWoman, helper.runePersonMan];
   const data = people.map((person, i) => {
@@ -69,7 +72,7 @@ for (let i = 0; i < simpleExpandoSource.length; i += 2) {
  * Expand from a real, single emoji to its convertible representation. Modifies the passed array
  * in-place.
  *
- * @param {!Array<number>} source
+ * @param {number[]} source
  * @return {boolean} if there was a change
  */
 export function expando(source) {
@@ -103,14 +106,14 @@ export function expando(source) {
       source.splice(source.length, 0, tone);
     }
   }
-  return source;
+  return true;
 }
 
 /**
  * Deexpand from a convertible representation of a single emoji to a real emoji. This just works by
  * manually checking all the cases for now. Modifies in-place.
  *
- * @param {!Array<number>} source
+ * @param {number[]} source
  * @return {boolean} if there was a change
  */
 export function deexpando(source) {

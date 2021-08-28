@@ -5,6 +5,7 @@ import {normalizeForStorage} from './task/server.js';
 import {restoreForClient, supportsTone, genderVariants, applySkinTone} from './task/client.js';
 import { deexpando } from './src/expando.js';
 
+// @ts-ignore
 const {suite, test, assert} = self;
 
 // TODO(samthor): We don't support being run on the command-line. Update headless-test.
@@ -57,6 +58,7 @@ suite('encoding', () => {
 
 suite('server', () => {
   test('normalizeForStorage', () => {
+    /** @type {{[input: string]: string[]}} */
     const tests = {
       '🐻‍❄️': ['\u{1f43b}\u{200d}\u{2744}\u{fe0f}'],
       '🐻‍❄️🐻‍❄️': ['\u{1f43b}\u{200d}\u{2744}\u{fe0f}', '\u{1f43b}\u{200d}\u{2744}\u{fe0f}'],

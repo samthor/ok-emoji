@@ -5,10 +5,11 @@
  */
 
 /**
- * @param {function(string): number} widthHelper
+ * @param {(check: string) => number} widthHelper
  * @return {number}
  */
 function internalDetermine(widthHelper) {
+  /** @type {(text: string) => boolean} */
   const zwjSupported = (text) => {
     const parts = text.split('\u200d').map(widthHelper);
     if (parts.length === 1) {
@@ -96,9 +97,12 @@ export default function determineEmojiSupport() {
     canvas.width = canvas.height = 16;
   }
   const context = canvas.getContext('2d');
-  context.fontFamily = 'sans-serif';
-  context.fontSize = '16px';
+  if (!context) {
+    return 0;
+  }
+  context.font = 'sans-serif 16px';
 
+  /** @type {(text: string) => number} */
   const widthHelper = (text) => context.measureText(text).width;
   return internalDetermine(widthHelper);
 }

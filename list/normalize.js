@@ -33,5 +33,6 @@ export function isRetainedGenderPerson(raw) {
   if (points.length !== 1) {
     return false;
   }
-  return isSingleBase(points[0].codePointAt(0));
+  const p = /** @type {string} */ (points[0]);
+  return isSingleBase(p.codePointAt(0) ?? 0);
 }

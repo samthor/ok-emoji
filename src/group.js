@@ -7,7 +7,7 @@ import * as helper from './helper.js';
 /**
  * Checks whether this is a valid person group or family. Expects already expando'ed emoji.
  *
- * @param {!Array<number>} points to check
+ * @param {number[]} points to check
  * @param {number} version to check at
  * @return {boolean}
  */
@@ -22,8 +22,8 @@ export function validPersonGroup(points, version = 0) {
   }
   // otherwise, check for person group
 
-  const first = points.shift();
-  const last = points.pop();
+  const first = /** @type {number} */ (points.shift());
+  const last = points.pop() ?? 0;
 
   if (!helper.isGenderPerson(first) || !helper.isGenderPerson(last)) {
     return false;

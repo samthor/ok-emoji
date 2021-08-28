@@ -27,6 +27,9 @@ const modifierBaseSet = new Set(Array.from(jsdecode(modifierBaseSource)));
 // This incorrectly includes "PEOPLE WRESTLING".
 modifierBaseSet.delete(0x1f93c);
 
+/** @typedef {{g: number, f: number, n: number}} */
+var ConfigSourceType;
+
 /**
  * This is override source data for professions and roles across versions. This maps runes to their
  * config.
@@ -38,41 +41,49 @@ modifierBaseSet.delete(0x1f93c);
  *
  * If `f` is not specified, this is assumed to be before E11. If `g` or `n` are not specified, they
  * take the value of `f`.
+ *
+ * @type {{ cs: Partial<ConfigSourceType>, p: number[] }[]}
  */
 const configSource = [
-  {g: 120}, [0x1f9cd, 0x1f9ce, 0x1f9cf, 0x1f9af, 0x1f9bc, 0x1f9bd],  // a11y emoji
-  {g: 130}, [0x1f470, 0x1f935],  // wedding emoji
-  {f: 110}, [0x1f9b8, 0x1f9b9],  // superhero/villan
-  {f: 110, n: 121}, [0x1f9b0, 0x1f9b1, 0x1f9b2, 0x1f9b3],  // hair
-  {f: 130}, [0x1f37c],  // feeding baby
-  {g: 131}, [0x1f9d4],  // beard
-  {n: 140}, [helper.runeCrown, helper.runeMusicalNotes],  // future emoji
-  {n: 130}, [helper.runeHolidayTree],  // claus
-  {n: 121}, [helper.runeHandshake],
-  {}, [helper.runeKiss, helper.runeHeart],
+  { cs: { g: 120 }, p: [0x1f9cd, 0x1f9ce, 0x1f9cf, 0x1f9af, 0x1f9bc, 0x1f9bd] },  // a11y emoji
+  { cs: { g: 130 }, p: [0x1f470, 0x1f935] },  // wedding emoji
+  { cs: { f: 110 }, p: [0x1f9b8, 0x1f9b9] },  // superhero/villan
+  { cs: {f: 110, n: 121}, p: [0x1f9b0, 0x1f9b1, 0x1f9b2, 0x1f9b3] },  // hair
+  { cs: {f: 130}, p: [0x1f37c] },  // feeding baby
+  { cs: {g: 131}, p: [0x1f9d4] },  // beard
+  { cs: {n: 140}, p: [helper.runeCrown, helper.runeMusicalNotes] },  // future emoji
+  { cs: {n: 130}, p: [helper.runeHolidayTree] },  // claus
+  { cs: {n: 121}, p: [helper.runeHandshake] },
+  { cs: {}, p: [helper.runeKiss, helper.runeHeart] },
 ];
 
+/**
+ * @param {Partial<ConfigSourceType>} config
+ * @return {ConfigSourceType}
+ */
 function updateConfig(config) {
-  const version = config['f'] = config['f'] || 0;  // default to zero
-  config['g'] = config['g'] || version;
-  config['n'] = config['n'] || version;
-  return config;
+  const version = config.f ?? 0;  // default to zero
+  return {
+    f: 0,
+    g: version,
+    n: version,
+    ...config,
+  };
 }
 
 const defaultRoleConfig = updateConfig({});
 const defaultProfessionConfig = updateConfig({n: 121});
 
 const unicodeConfig = new Map();
-for (let i = 0; i < configSource.length; i += 2) {
-  const config = updateConfig(configSource[i+0]);
-  const each = configSource[i+1];
-  each.forEach((point) => unicodeConfig.set(point, config));
-}
+configSource.forEach(({cs, p}) => {
+  const config = updateConfig(cs);
+  p.forEach((point) => unicodeConfig.set(point, config));
+});
 
 
 /**
  * @param {number} base
- * @return {?{f: number, g: number, n: version}}
+ * @return {ConfigSourceType|null}
  */
 export function getPersonConfig(base) {
   const config = unicodeConfig.get(base);
@@ -128,7 +139,7 @@ export function isGroup(base) {
 /**
  * Returns information on a modifiable emoji. Expects to be pre-expando'ed.
  *
- * @param {!Array<number>} part
+ * @param {number[]} part
  * @return {?{base: number, gender: number, tone: number, extraTone: number}}
  */
 export function splitForModifiers(part) {
@@ -200,6 +211,7 @@ export function splitForModifiers(part) {
 }
 
 
+/** @type {(gender: number, isLeft: boolean) => number} */
 const personForGender = (gender, isLeft) => {
   switch (gender) {
     case helper.runeGenderMale:
@@ -219,8 +231,8 @@ const personForGender = (gender, isLeft) => {
 /**
  * Joins a modifiable emoji. Doesn't deexpando.
  *
- * @param {?{base: number, gender: number, tone: number, extraTone: number}}
- * @return {!Array<number>}
+ * @param {{base: number, gender: number, tone: number, extraTone: number}} arg
+ * @return {number[]}
  */
 export function joinForModifiers({base, gender, tone, extraTone}) {
   const out = [base];
@@ -277,7 +289,7 @@ export function joinForModifiers({base, gender, tone, extraTone}) {
 
 
 /**
- * @param {!Array<number>} part
+ * @param {number[]} points
  * @return {?{base: number, gender: number, tone: number, extraTone: number}}
  */
 function internalMatchGroup(points) {
@@ -360,16 +372,20 @@ function internalMatchGroup(points) {
 }
 
 
+/**
+ * @param {number[]} points
+ * @return {?{person: number, tone: number}}
+ */
 function consumePersonTone(points) {
   if (!helper.isGenderPerson(points[0])) {
     return null;
   }
   const out = {
-    person: points.shift(),
+    person: /** @type {number} */ (points.shift()),
     tone: 0,
   };
   if (helper.isToneModifier(points[0])) {
-    out.tone = points.shift();
+    out.tone = /** @type {number} */ (points.shift());
   }
   return out;
 }
