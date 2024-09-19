@@ -1,0 +1,14 @@
+{
+  "devDependencies": {
+    "@types/node": "^22.5.5"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "tsx test/"
+  },
+  "name": "ok-emoji",
+  "version": "4.0.0",
+  "private": true,
+  "author": "Sam Thorogood <sam.thorogood@gmail.com>",
+  "license": "Apache-2.0"
+}
