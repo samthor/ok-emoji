@@ -27,6 +27,10 @@ export function classifyAllEmoji(i: Iterable<EmojiLine>) {
   const out: Record<string, EmojiClassify> = {};
 
   for (const e of all) {
+    const p = descriptionParts(e.description);
+    console.info(e.emoji, JSON.stringify(p));
+    continue;
+
     const [left, right] = splitFixed(e.description, ': ', 2);
 
     // not interesting; add verbatim
@@ -72,22 +76,26 @@ export function classifyAllEmoji(i: Iterable<EmojiLine>) {
 }
 
 export type DescriptionParts = {
+  root: boolean;
   name: string;
 
   direction?: string; // l, r, u, d, 'o' (oncoming)
 };
 
-export function descriptionParts(description: string) {
+export function descriptionParts(description: string): DescriptionParts {
   const [left, right] = splitFixed(description, ': ', 2);
 
   // not interesting
-  if (['flag', 'keycap'].includes(left)) {
-    return { name: description };
+  if (['flag', 'keycap'].includes(left) || !right) {
+    return { root: true, name: description };
   }
 
   const parts = right.split(', ');
   const lastPart = parts.at(-1)!;
   let descriptor: string | undefined;
+
+  // TODO: still has gender
+  let rootName: string;
 
   // this is "beard", "curly hair" etc
   if (!isStandardPart(lastPart)) {
@@ -96,6 +104,38 @@ export function descriptionParts(description: string) {
     if (!['person', 'man', 'woman'].includes(left)) {
       // we only expect this to qualify basic humans
       throw new Error(`got unexpected descriptor on: ${left}`);
+    } else if (parts.length > 1 || (parts.length === 1 && !isSkinTone(parts[0]))) {
+      // either zero or one skin tones
+      throw new Error(`got unknown parts on: ${left} ${JSON.stringify(parts)}`);
     }
+
+    if (parts.length === 0) {
+      return { root: true, name: description };
+    }
+
+    // we rewrite this to look a bit more normal
+    rootName = `${descriptor} ${left}`;
+  } else {
+    rootName = left;
   }
+
+  let toneCount = 0;
+  while (parts.length && isSkinTone(parts.at(-1)!)) {
+    parts.pop();
+    ++toneCount;
+  }
+
+  let pt: string[] | undefined;
+  if (parts.length) {
+    // if we have parts, these must be gender/adult/child etc and these will NOT be in the name
+    pt = parts.slice();
+    parts.splice(0, parts.length);
+  }
+
+  return {
+    root: false,
+    name: rootName,
+    ...(toneCount ? { tones: toneCount } : null),
+    ...(pt?.length ? { pt } : null),
+  };
 }
