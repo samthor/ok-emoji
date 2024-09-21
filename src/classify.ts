@@ -1,141 +1,110 @@
+import { type DescriptionParts, descriptionParts } from './classify-description.ts';
 import type { EmojiLine } from './parser.ts';
-import { splitFixed } from './string.ts';
-
-function countSkinTone(s: string) {
-  let count = 0;
-  s.replaceAll(/[\u{1f3fb}\u{1f3fc}\u{1f3fd}\u{1f3fe}\u{1f3ff}]/gu, () => {
-    ++count;
-    return '';
-  });
-  return count;
-}
-
-const isStandardPart = (part: string) => {
-  return (
-    isSkinTone(part) || ['woman', 'man', 'person', 'girl', 'boy', 'child', 'adult'].includes(part)
-  );
-};
-
-const isSkinTone = (part: string) => part.endsWith(' skin tone');
-
-type EmojiClassify = EmojiLine & { base?: string; isTone?: true; hasTone?: number };
 
 export function classifyAllEmoji(i: Iterable<EmojiLine>) {
-  const all = [...i];
+  const src = [...i];
 
-  const keyToEmoji: Record<string, string> = {};
-  const out: Record<string, EmojiClassify> = {};
+  const allByName: Record<string, ({ emoji: string } & DescriptionParts)[]> = {};
 
-  for (const e of all) {
-    const p = descriptionParts(e.description);
-    console.info(e.emoji, JSON.stringify(p));
-    continue;
+  for (const e of src) {
+    let p: DescriptionParts;
+    if (e.qualifier !== 'component') {
+      p = descriptionParts(e.description);
+    } else {
+      p = { name: `component: ${e.description}` };
+    }
 
-    const [left, right] = splitFixed(e.description, ': ', 2);
+    let all = allByName[p.name];
+    if (all === undefined) {
+      all = [];
+      allByName[p.name] = all;
+    }
+    all.push({ emoji: e.emoji, ...p });
+  }
 
-    // not interesting; add verbatim
-    if (!right || ['flag', 'keycap'].includes(left)) {
-      out[e.emoji] = { ...e };
+  for (const [name, all] of Object.entries(allByName)) {
+    // find the max of everything and reconcile the rest
+    let toneCount = 0;
+    const hasDir = new Set<string>();
+    const hasPt = new Set<string>(); // TODO: not sure how to reconcile "base"
+
+    for (const each of all) {
+      toneCount = Math.max(each.tones?.length ?? 0, toneCount);
+      each.dir && hasDir.add(each.dir);
+      each.pt && hasPt.add(each.pt);
+    }
+    if (!toneCount && !hasDir.size && !hasPt.size) {
       continue;
     }
 
-    const parts = right.split(', ');
-    const lastPart = parts.at(-1)!;
-    let descriptor: string | undefined;
+    // some of 'all' might not know about these
+    for (const each of all) {
+      const localToneCount = each.tones?.length ?? 0;
 
-    // this is "beard", "curly hair" etc
-    if (!isStandardPart(lastPart)) {
-      descriptor = parts.pop()!;
+      // update skin tones
 
-      if (!['person', 'man', 'woman'].includes(left)) {
-        throw new Error(`got unexpected descriptor on: ${left}`);
-      }
-      const key = `${descriptor}:${left}`;
-
-      if (parts.length === 0) {
-        out[e.emoji] = { ...e };
-        keyToEmoji[key] = e.emoji;
-      } else if (parts.length !== 1 || !isSkinTone(parts[0])) {
-        throw new Error(`got unknown parts on: ${left} ${parts}`);
+      if (localToneCount === toneCount) {
+        // ok
+      } else if (localToneCount === 0) {
+        // this is the "zero" to the count
+        each.tones = ''.padEnd(toneCount, '_'); // indicate via right number of _'s
       } else {
-        const baseEmoji = keyToEmoji[key];
-
-        out[e.emoji] = { ...e, base: baseEmoji, isTone: true };
-
-        const base = out[baseEmoji];
-        base!.hasTone = 1;
+        if (localToneCount !== 1 || toneCount !== 2) {
+          throw new Error(
+            `unexpected total toneCount=${toneCount} localToneCount=${localToneCount}`,
+          );
+        }
+        // double the singular tone
+        each.tones = each.tones! + each.tones!;
       }
-      // TODO: mark as tone-able
-      continue;
+
+      // update dir
+      if (!each.dir && hasDir.has('right')) {
+        each.dir = 'left';
+      }
+
+      // update pt
+      if (!each.pt && hasPt.size) {
+        if (hasPt.has('m') && hasPt.has('w') && hasPt.size === 2) {
+          // we are the person to other m/f
+          each.pt = 'p';
+        } else if (name === 'kiss' || name === 'couple with heart') {
+          // this is the "same tone" pp, which is just the modifier of a simple emoji
+          each.pt = 'pp';
+        } else if (name === 'family') {
+          if (each.emoji !== '👪') {
+            throw new Error(`unknown family: ${each.emoji}`);
+          }
+          // TODO: this is "1F46A" and is conceptually same as "1F9D1 200D 1F9D1 200D 1F9D2"
+          // _both_ render as "ppc" (adult/adult/child)
+          each.pt = '?';
+        } else {
+          throw new Error(`unknown pt resolution: ${name}`);
+        }
+      }
     }
 
-    console.info(left, { parts, descriptor });
+    //    console.info(name, '=>', { all: all.length, toneCount, hasDir, hasPt });
   }
 
-  console.info(JSON.stringify(out, null, 2));
-}
+  const groups: Record<string, string> = {};
 
-export type DescriptionParts = {
-  root: boolean;
-  name: string;
+  for (const [name, all] of Object.entries(allByName)) {
+    const renders = all.map((each) => {
+      const parts = [each.emoji, each.pt ?? '', each.tones ?? '', each.dir ?? ''];
+      while (parts.at(-1) === '') {
+        parts.pop();
+      }
+      return parts.join(',');
+    });
 
-  direction?: string; // l, r, u, d, 'o' (oncoming)
-};
-
-export function descriptionParts(description: string): DescriptionParts {
-  const [left, right] = splitFixed(description, ': ', 2);
-
-  // not interesting
-  if (['flag', 'keycap'].includes(left) || !right) {
-    return { root: true, name: description };
-  }
-
-  const parts = right.split(', ');
-  const lastPart = parts.at(-1)!;
-  let descriptor: string | undefined;
-
-  // TODO: still has gender
-  let rootName: string;
-
-  // this is "beard", "curly hair" etc
-  if (!isStandardPart(lastPart)) {
-    descriptor = parts.pop()!;
-
-    if (!['person', 'man', 'woman'].includes(left)) {
-      // we only expect this to qualify basic humans
-      throw new Error(`got unexpected descriptor on: ${left}`);
-    } else if (parts.length > 1 || (parts.length === 1 && !isSkinTone(parts[0]))) {
-      // either zero or one skin tones
-      throw new Error(`got unknown parts on: ${left} ${JSON.stringify(parts)}`);
+    const s = new Set(renders);
+    if (s.size !== renders.length) {
+      throw new Error(`got eventual dup: ${renders}`);
     }
 
-    if (parts.length === 0) {
-      return { root: true, name: description };
-    }
-
-    // we rewrite this to look a bit more normal
-    rootName = `${descriptor} ${left}`;
-  } else {
-    rootName = left;
+    groups[name] = renders.join('|');
   }
 
-  let toneCount = 0;
-  while (parts.length && isSkinTone(parts.at(-1)!)) {
-    parts.pop();
-    ++toneCount;
-  }
-
-  let pt: string[] | undefined;
-  if (parts.length) {
-    // if we have parts, these must be gender/adult/child etc and these will NOT be in the name
-    pt = parts.slice();
-    parts.splice(0, parts.length);
-  }
-
-  return {
-    root: false,
-    name: rootName,
-    ...(toneCount ? { tones: toneCount } : null),
-    ...(pt?.length ? { pt } : null),
-  };
+  console.info(JSON.stringify(groups, null, 2));
 }

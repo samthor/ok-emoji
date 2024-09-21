@@ -22,6 +22,11 @@ export type EmojiLine = {
   group: string;
 
   /**
+   * The qualifier of this emoji.
+   */
+  qualifier: 'fully-qualified' | 'component';
+
+  /**
    * Subgroup name.
    */
   subgroup: string;
@@ -54,6 +59,8 @@ export function* iterateEmojiTest(raw: string): Generator<EmojiLine, void, void>
     if (!['fully-qualified', 'component'].includes(qualified)) {
       continue;
     }
+    const qualifier: EmojiLine['qualifier'] =
+      qualified === 'fully-qualified' ? 'fully-qualified' : 'component';
 
     const [_, emoji, versionStr] = commentRaw.split(' ', 3);
 
@@ -64,6 +71,7 @@ export function* iterateEmojiTest(raw: string): Generator<EmojiLine, void, void>
       emoji,
       version,
       description,
+      qualifier,
       group,
       subgroup,
     };
