@@ -49,10 +49,12 @@ export function qualifyEmoji(x: string): string {
     }
     out.push(x);
 
+    // tone acts as qualifier
     if (isSkinToneModifier(cp[i + 1] ?? 0)) {
       continue;
     }
 
+    // otherwise, add 0xfe0f
     if (emojiCodePointNeedsQualifier(x)) {
       out.push(0xfe0f);
     }
@@ -70,10 +72,6 @@ export function unqualifyEmoji(x: string): string {
 
 export function isSkinToneModifier(r: number) {
   return r >= 0x1f3fb && r <= 0x1f3ff;
-}
-
-export function isActsAsQualifier(r: number) {
-  return isSkinToneModifier(r) || r === 0xfe0f;
 }
 
 export function isFlagPartCodePoint(r: number) {

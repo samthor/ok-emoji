@@ -1,6 +1,5 @@
 #!/usr/bin/env node --experimental-strip-types
 
-import { classifyAllEmoji } from './src/classify.ts';
 import { decodeClassifyOut } from './src/encoding/decode.ts';
 import { encodeClassifyOut } from './src/encoding/encode.ts';
 import { iterateEmojiTest } from './src/parser.ts';

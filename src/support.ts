@@ -2,13 +2,10 @@ import {
   codepointsFor,
   emojiCodePointModifierBase,
   emojiCodePointNeedsQualifier,
-  isActsAsQualifier,
   isKeycapLeft,
   isSkinToneModifier,
 } from './forms.ts';
 import { supportsEmojiByMeasure } from './support-measure.ts';
-
-const supportEmoji = /^\p{Emoji}$/u;
 
 // RGI_Emoji is only supported from 2023-09-18 onwards (Safari, Chrome in 2023-04)
 // ...one year later, caniuse says 86.11%
