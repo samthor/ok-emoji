@@ -91,6 +91,10 @@ function extractNamePersonType(name: string) {
     }
 
     // look for suffix (few options)
+    // this catches the 'component' rewrites, plus three built-ins:
+    //  - old {gender}
+    //  - deaf {gender}
+    //  - pregnant {gender}
     const sm = /^(.*) (person|man|woman)$/.exec(name);
     if (sm) {
       return { raw: sm[2], name: sm[1] };
@@ -108,6 +112,35 @@ function extractNamePersonType(name: string) {
   return { name: m.name, pt };
 }
 
+const personKeyOrder = 'pwmcgb';
+
+/**
+ * Sorts a person type key, made of "pwmcgb" characters.
+ */
+export function sortPersonKey(a: string, b: string) {
+  for (let i = 0; i < Math.max(a.length, b.length); ++i) {
+    const orderA = personKeyOrder.indexOf(a[i] ?? ' ');
+    const orderB = personKeyOrder.indexOf(b[i] ?? ' ');
+
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+  }
+
+  return 0;
+}
+
+/**
+ * Converts a person type string into one of:
+ *   - (p)erson
+ *   - (w)oman
+ *   - (m)an
+ *   - (c)hild
+ *   - (g)irl
+ *   - (b)oy
+ *
+ * Or multiple of those (max 2).
+ */
 function flattenLongPersonType(raw: string) {
   switch (raw) {
     case 'people':
@@ -132,7 +165,7 @@ function flattenLongPersonType(raw: string) {
     case 'boy':
       return 'b';
     case 'girl':
-      return 'b';
+      return 'g';
     default:
       return undefined;
   }
@@ -169,7 +202,7 @@ function descriptionPartsStepTone(description: string): DescriptionParts {
       throw new Error(`got unknown parts on: ${left} ${JSON.stringify(parts)}`);
     }
 
-    // we rewrite this to look a bit more normal
+    // we rewrite this to look a bit more normal, but "~" as distinguisher from component itself
     rootName = `${descriptor} ${left}`;
 
     if (parts.length === 0) {
