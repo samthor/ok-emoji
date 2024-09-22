@@ -7,6 +7,11 @@ export type EmojiLine = {
   emoji: string;
 
   /**
+   * The qualifier of this emoji.
+   */
+  qualifier: 'fully-qualified' | 'component';
+
+  /**
    * Version in integer. 0.6 is 60, 16.0 is 1600.
    */
   version: number;
@@ -20,11 +25,6 @@ export type EmojiLine = {
    * Group name.
    */
   group: string;
-
-  /**
-   * The qualifier of this emoji.
-   */
-  qualifier: 'fully-qualified' | 'component';
 
   /**
    * Subgroup name.

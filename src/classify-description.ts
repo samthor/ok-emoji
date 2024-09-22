@@ -1,4 +1,5 @@
 import { splitFixed } from './string.ts';
+import { tonesToFitz } from './tone.ts';
 
 export type DescriptionParts = {
   name: string;
@@ -224,15 +225,7 @@ function descriptionPartsStepTone(description: string): DescriptionParts {
   };
 }
 
-const tonesToFitz: Record<string, string> = {
-  'light skin tone': '1',
-  'medium-light skin tone': '2',
-  'medium skin tone': '3',
-  'medium-dark skin tone': '4',
-  'dark skin tone': '5',
-};
-
-const isStandardPart = (part: string) => {
+export const isStandardPart = (part: string) => {
   return (
     isSkinTone(part) || ['woman', 'man', 'person', 'girl', 'boy', 'child', 'adult'].includes(part)
   );

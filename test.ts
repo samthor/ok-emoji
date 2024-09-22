@@ -1,6 +1,5 @@
 #!/usr/bin/env node --experimental-strip-types
 
-import { friendlyCase } from './src/case.ts';
 import { classifyAllEmoji } from './src/classify.ts';
 import { decodeAllEmojiData } from './src/encoding/decode.ts';
 import { buildAllEmojiData, encodeAllEmojiData } from './src/encoding/encode.ts';
