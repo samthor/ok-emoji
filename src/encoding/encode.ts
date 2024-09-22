@@ -4,6 +4,8 @@ import { expandPersonType } from './shared.ts';
 
 export type EncodedKeyType = Record<string, string | string[]>;
 
+// TODO: this should instead only encode `DecodedType` (add extra step)
+
 export function encodeClassifyOut(raw: EmojiLine[]): {
   byKey: EncodedKeyType;
   order: EmojiLine[];

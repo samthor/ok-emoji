@@ -24,3 +24,5 @@ console.warn('size', size, 'gzipSize', gz.length);
 
 const out = decodeClassifyOut(e.byKey);
 console.warn('got decoded', JSON.stringify(out, null, 2));
+
+console.info(out.length); // ~2000
