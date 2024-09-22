@@ -1,43 +1,58 @@
-import { classifyAllEmoji } from '../classify.ts';
-import type { EmojiLine } from '../parser.ts';
-import { expandPersonType } from './shared.ts';
+import type { ClassifyOut } from '../classify.ts';
+import { type EmojiData, type EncodedAllEmojiData, expandPersonType } from './shared.ts';
 
-export type EncodedKeyType = Record<string, string | string[]>;
+export function encodeAllEmojiData(all: EmojiData[]) {
+  const out: EncodedAllEmojiData = {};
 
-// TODO: this should instead only encode `DecodedType` (add extra step)
+  const byKey: Record<string, EmojiData[]> = {};
 
-export function encodeClassifyOut(raw: EmojiLine[]): {
-  byKey: EncodedKeyType;
-  order: EmojiLine[];
-} {
-  const byKey: EncodedKeyType = {};
-  const allByName = classifyAllEmoji(raw);
-  const outputOrder: string[] = [];
+  for (const each of all) {
+    byKey[each.key] ??= [];
+    byKey[each.key].push(each);
+  }
 
-  for (const [name, all] of Object.entries(allByName)) {
-    outputOrder.push(...all.map((e) => e.line.emoji));
-
-    if (all.length === 1) {
-      const only = all[0];
-      const d = only.line.description;
+  for (const [key, allForKey] of Object.entries(byKey)) {
+    if (allForKey.length === 1) {
+      const only = allForKey[0];
+      const d = only.description;
 
       // simple case: single emoji, name was same
-      if (d === name || `~${d}` === name) {
-        byKey[name] = all[0].line.emoji;
+      if ((d === key || `~${d}` === key) && !only.dir && !only.pt && !only.tones) {
+        out[key] = only.emoji;
         continue;
       }
     }
 
-    const dataForKey: string[] = [];
-
-    for (let i = 0; i < all.length; ++i) {
-      const curr = all[i];
-
-      const parts = [curr.line.emoji, curr.dp.pt ?? '', curr.dp.dir ?? ''];
+    out[key] = allForKey.map((each) => {
+      const parts = [each.emoji, each.pt ?? '', each.dir ?? ''];
       while (parts.at(-1) === '') {
         parts.pop();
       }
       let line = parts.join(',');
+
+      if (each.tones) {
+        line += '|' + each.tones.join(',');
+      }
+
+      const guessName = expandPersonType(each.pt, key) ?? key;
+      if (each.description !== guessName) {
+        line = `${each.description}#` + line;
+      }
+
+      return line;
+    });
+  }
+
+  return out;
+}
+
+export function buildAllEmojiData(c: ClassifyOut): EmojiData[] {
+  const out: EmojiData[] = [];
+
+  for (const [key, all] of Object.entries(c)) {
+    for (let i = 0; i < all.length; ++i) {
+      const curr = all[i];
+      let tones: string[] | undefined;
 
       if (curr.dp.tones) {
         if (!/^_+$/.test(curr.dp.tones)) {
@@ -46,30 +61,23 @@ export function encodeClassifyOut(raw: EmojiLine[]): {
         // nb. this only works on maybe past 13.1, where everything has either 5/25 tones
         const nextTones = Math.pow(5, curr.dp.tones.length);
         const tonedEntries = all.slice(i + 1, i + 1 + nextTones);
-        const tonedEmoji = tonedEntries.map(({ line: { emoji } }) => emoji);
-
+        tones = tonedEntries.map(({ line: { emoji } }) => emoji);
         i += nextTones;
-
-        line += `|` + tonedEmoji.join(',');
       }
 
-      const guessName = expandPersonType(curr.dp.pt, name) ?? name;
-      if (curr.line.description !== guessName) {
-        line = `${curr.line.description}#` + line;
+      const dt: EmojiData = { emoji: curr.line.emoji, key, description: curr.line.description };
+      if (curr.dp.pt) {
+        dt.pt = curr.dp.pt;
       }
-
-      dataForKey.push(line);
+      if (tones) {
+        dt.tones = tones;
+      }
+      if (curr.dp.dir) {
+        dt.dir = curr.dp.dir;
+      }
+      out.push(dt);
     }
-
-    byKey[name] = dataForKey;
   }
 
-  // yield new order (changes because of werid layout)
-  const lineByEmoji: Record<string, EmojiLine> = {};
-  for (const line of raw) {
-    lineByEmoji[line.emoji] = line;
-  }
-
-  const order: EmojiLine[] = outputOrder.map((emoji) => lineByEmoji[emoji]);
-  return { byKey, order };
+  return out;
 }

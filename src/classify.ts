@@ -4,13 +4,11 @@ import type { EmojiLine } from './parser.ts';
 export type ClassifyEach = { line: EmojiLine; dp: DescriptionParts };
 export type ClassifyOut = Record<string, ClassifyEach[]>;
 
-export function classifyAllEmoji(i: Iterable<EmojiLine>): ClassifyOut {
-  const src = [...i];
-
+export function classifyAllEmoji(it: Iterable<EmojiLine>): ClassifyOut {
   const allByName: ClassifyOut = {};
 
   // group emoji by root key
-  for (const e of src) {
+  for (const e of it) {
     let p: DescriptionParts;
     if (e.qualifier === 'component') {
       p = { name: `~${e.description}` };

@@ -1,24 +1,15 @@
-import type { EncodedKeyType } from './encode.ts';
-import { expandPersonType } from './shared.ts';
-
-export type DecodedType = {
-  emoji: string;
-  name: string;
-  pt?: string;
-  tones?: string[]; // 5 or 25 emoji
-  dir?: string;
-};
+import { expandPersonType, type EmojiData, type EncodedAllEmojiData } from './shared.ts';
 
 const decodeRe = /^(?:([^#]*)#|)(.*?)(?:|\|(.*))$/;
 
-export function decodeClassifyOut(enc: EncodedKeyType) {
-  const out: DecodedType[] = [];
+export function decodeAllEmojiData(enc: EncodedAllEmojiData) {
+  const out: EmojiData[] = [];
 
   const seen = new Set<string>();
 
   for (const [key, data] of Object.entries(enc)) {
     if (typeof data === 'string') {
-      out.push({ emoji: data, name: key });
+      out.push({ emoji: data, key, description: key });
       continue;
     }
 
@@ -37,22 +28,18 @@ export function decodeClassifyOut(enc: EncodedKeyType) {
       }
 
       const [emoji, pt, dir] = m[2].split(',');
-      let name = m[1] || expandPersonType(pt, key) || key;
+      let description = m[1] || expandPersonType(pt, key) || key;
 
-      if (name.startsWith('~')) {
-        name = name.substring(1);
+      if (description.startsWith('~')) {
+        description = description.substring(1);
       }
 
-      if (seen.has(emoji) || seen.has(name)) {
-        throw new Error(`already seen ${emoji}/${name}`);
+      if (seen.has(emoji) || seen.has(description)) {
+        throw new Error(`already seen ${emoji}/${description}`);
       }
-      seen.add(emoji).add(name);
+      seen.add(emoji).add(description);
 
-      const dt: DecodedType = {
-        emoji,
-        name,
-      };
-
+      const dt: EmojiData = { emoji, key, description };
       if (pt) {
         dt.pt = pt;
       }
@@ -62,7 +49,6 @@ export function decodeClassifyOut(enc: EncodedKeyType) {
       if (dir) {
         dt.dir = dir;
       }
-
       out.push(dt);
     }
   }

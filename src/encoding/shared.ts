@@ -23,3 +23,14 @@ export function expandPersonType(pt: string | undefined, name: string) {
   }
   return undefined;
 }
+
+export type EmojiData = {
+  key: string;
+  emoji: string;
+  description: string;
+  pt?: string;
+  tones?: string[]; // 5 or 25 emoji
+  dir?: string;
+};
+
+export type EncodedAllEmojiData = Record<string, string | string[]>;
