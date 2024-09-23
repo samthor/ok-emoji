@@ -70,6 +70,13 @@ export function unqualifyEmoji(x: string): string {
   return x.replaceAll('\u{fe0f}', '');
 }
 
+/**
+ * Filters the codepoints of this string to the skin tone modifiers.
+ */
+export function tonesForEmoji(s: string): number[] {
+  return codepointsFor(s).filter((r) => isSkinToneModifier(r));
+}
+
 export function isSkinToneModifier(r: number) {
   return r >= 0x1f3fb && r <= 0x1f3ff;
 }
