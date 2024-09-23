@@ -18,6 +18,9 @@ const specialDashCase: Record<string, string> = {
 /**
  * Converts the raw description from the Emoji corpus into a lower-case dash-case format. This
  * should return a string matching the regular expression `[a-z0-9]+(-[a-z0-9]+)*`.
+ *
+ * Because it normalizes the input, this should be the same for the friendly name or the raw
+ * description data.
  */
 export function dashCase(raw: string) {
   if (raw in specialDashCase) {

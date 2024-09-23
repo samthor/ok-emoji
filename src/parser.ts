@@ -22,18 +22,22 @@ export type EmojiLine = {
   description: string;
 
   /**
-   * Group name.
+   * Group name as source data.
    */
   group: string;
 
   /**
-   * Subgroup name.
+   * Subgroup name as source data.
    */
   subgroup: string;
 };
 
+const commentRe = /^(\S+)\s+(?:(E[\d\.]+)\s+|)(.*)$/;
+
 /**
- * Iterates through data formatted like "emoji-test.txt". Yields lines of data.
+ * Low-level iterator through data formatted like "emoji-test.txt". Yields lines of data.
+ *
+ * Skips data which is not "fully-qualified" or "component".
  */
 export function* iterateEmojiTest(raw: string): Generator<EmojiLine, void, void> {
   const lines = raw.split('\n');
@@ -55,23 +59,36 @@ export function* iterateEmojiTest(raw: string): Generator<EmojiLine, void, void>
     const [codepointRaw, rest] = splitFixed(line, ';', 2);
     const [qualifiedRaw, commentRaw] = splitFixed(rest, '#', 2);
 
-    const qualified = qualifiedRaw.trim();
-    if (!['fully-qualified', 'component'].includes(qualified)) {
+    const codepoints = codepointRaw
+      .trim()
+      .split(/]\s+/g)
+      .map((s) => parseInt(s, 16));
+    const expectedEmoji = String.fromCodePoint(...codepoints);
+
+    const qualifier = qualifiedRaw.trim();
+    if (!['fully-qualified', 'component'].includes(qualifier)) {
       continue;
     }
-    const qualifier: EmojiLine['qualifier'] =
-      qualified === 'fully-qualified' ? 'fully-qualified' : 'component';
 
-    const [_, emoji, versionStr] = commentRaw.split(' ', 3);
+    const m = commentRe.exec(commentRaw.trim());
+    if (!m) {
+      throw new Error(`bad comment: ${commentRe}`);
+    }
 
-    const description = commentRaw.substring(emoji.length + versionStr.length + 3);
-    const version = Math.round(100 * parseFloat(versionStr.substring(1)));
+    const emoji = m[1];
+    const versionStr = m[2];
+    const description = m[3];
+    const version = versionStr ? Math.round(100 * parseFloat(versionStr.substring(1))) : 0;
+
+    if (emoji !== expectedEmoji) {
+      throw new Error(`badly formed test data: emoji=${emoji} expected=${expectedEmoji}`);
+    }
 
     yield {
       emoji,
       version,
       description,
-      qualifier,
+      qualifier: qualifier as EmojiLine['qualifier'],
       group,
       subgroup,
     };
