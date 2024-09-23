@@ -1,3 +1,6 @@
+/**
+ * Expands a pt string back to a friendly name.
+ */
 export function expandPersonType(pt: string | undefined, name: string) {
   if (pt === undefined) {
     return name;
@@ -22,6 +25,36 @@ export function expandPersonType(pt: string | undefined, name: string) {
       return `men ${name}`;
   }
   return undefined;
+}
+
+export const personTypeAllData: Record<string, string> = {
+  '?': 'default',
+  p: 'adult', // not used normally, just for family render
+  w: 'woman',
+  m: 'man',
+  c: 'child',
+  g: 'girl',
+  b: 'boy',
+};
+
+export function personTypeAll(pt: string | undefined, key?: string) {
+  if (!pt) {
+    return '';
+  }
+
+  if (['family', 'couple with heart', 'kiss'].includes(key!)) {
+    // splay out normally
+    return [...pt]
+      .map((each) => personTypeAllData[each] ?? '')
+      .filter((x) => x)
+      .join(', ');
+  }
+
+  const out = expandPersonType(pt, '')?.trim();
+  if (!out) {
+    throw new Error(`could not expand: ${pt}`);
+  }
+  return out;
 }
 
 export type EmojiData = {

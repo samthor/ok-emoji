@@ -1,3 +1,4 @@
+import { codepointsFor } from './forms.ts';
 import { splitFixed } from './string.ts';
 
 export type EmojiLine = {
@@ -59,12 +60,6 @@ export function* iterateEmojiTest(raw: string): Generator<EmojiLine, void, void>
     const [codepointRaw, rest] = splitFixed(line, ';', 2);
     const [qualifiedRaw, commentRaw] = splitFixed(rest, '#', 2);
 
-    const codepoints = codepointRaw
-      .trim()
-      .split(/]\s+/g)
-      .map((s) => parseInt(s, 16));
-    const expectedEmoji = String.fromCodePoint(...codepoints);
-
     const qualifier = qualifiedRaw.trim();
     if (!['fully-qualified', 'component'].includes(qualifier)) {
       continue;
@@ -80,8 +75,18 @@ export function* iterateEmojiTest(raw: string): Generator<EmojiLine, void, void>
     const description = m[3];
     const version = versionStr ? Math.round(100 * parseFloat(versionStr.substring(1))) : 0;
 
+    const codepoints = codepointRaw
+      .trim()
+      .split(/\s+/g)
+      .map((s) => parseInt(s, 16));
+    const expectedEmoji = String.fromCodePoint(...codepoints);
+
     if (emoji !== expectedEmoji) {
-      throw new Error(`badly formed test data: emoji=${emoji} expected=${expectedEmoji}`);
+      throw new Error(
+        `badly formed test data: emoji=${codepointsFor(emoji)} expected=${codepointsFor(
+          expectedEmoji,
+        )} raw=${codepointRaw}`,
+      );
     }
 
     yield {

@@ -1,14 +1,11 @@
 import { isStandardPart } from './classify-description.ts';
+import { tonesForEmoji } from './forms.ts';
 import { splitFixed } from './string.ts';
 
 export const tonesToFitz: Record<string, string> = {};
 export const fitzTones = ['light', 'medium-light', 'medium', 'medium-dark', 'dark'];
 
 fitzTones.forEach((tone, index) => (tonesToFitz[tone + ' skin tone'] = String(index + 1)));
-
-function toneStrByNo(no: number) {
-  return fitzTones[no] + ' skin tone';
-}
 
 export function expandTones(name: string, tones?: string[]): [string, string][] {
   if (!tones?.length) {
@@ -31,17 +28,16 @@ export function expandTones(name: string, tones?: string[]): [string, string][] 
     insert = (s) => `${left}: ${s}, ${right}`;
   }
 
-  if (tones.length === 5) {
-    return tones.map((emoji, index) => [emoji, insert(toneStrByNo(index))]);
-  } else if (tones.length === 25) {
-    return tones.map((emoji, index) => {
-      const terms = [toneStrByNo(Math.floor(index / 5)), toneStrByNo(index % 5)];
-      if (terms[1] === terms[0]) {
-        terms.pop();
-      }
-      return [emoji, insert(terms.join(', '))];
-    });
-  } else {
-    throw new Error(`unknown tones length: ${tones.length}`);
+  return tones.map((emoji) => [emoji, insert(tonesDescription(emoji))]);
+}
+
+/**
+ * Return the comma-separated description of the skin tones in this emoji. Returns blank if none.
+ */
+export function tonesDescription(emoji: string): string {
+  const t = tonesForEmoji(emoji);
+  if (!t) {
+    return '';
   }
+  return t.map((r) => `${fitzTones[r - 0x1f3fb]} skin tone`).join(', ');
 }

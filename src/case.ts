@@ -50,8 +50,8 @@ const friendlyReplacements: [RegExp, string][] = [
  * Converts the raw description from the Emoji corpus into a relatively friendly display title.
  */
 export function friendlyCase(raw: string) {
-  if (raw.length === 3 && !/[aeiou]/.test(raw)) {
-    // catches DVD/DNA
+  if (raw.length === 3 && /[^aeiou]{2}\w/.test(raw)) {
+    // catches DVD/DNA (consonant / consonant / any)
     return raw.toUpperCase();
   }
 

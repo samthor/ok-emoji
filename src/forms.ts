@@ -72,9 +72,17 @@ export function unqualifyEmoji(x: string): string {
 
 /**
  * Filters the codepoints of this string to the skin tone modifiers.
+ *
+ * If they are all the same, returns a single modifier.
  */
 export function tonesForEmoji(s: string): number[] {
-  return codepointsFor(s).filter((r) => isSkinToneModifier(r));
+  const out = codepointsFor(s).filter((r) => isSkinToneModifier(r));
+  for (let i = 1; i < out.length; ++i) {
+    if (out[i] !== out[0]) {
+      return out;
+    }
+  }
+  return [out[0]];
 }
 
 export function isSkinToneModifier(r: number) {
@@ -87,4 +95,19 @@ export function isFlagPartCodePoint(r: number) {
 
 export function isKeycapLeft(r: number) {
   return (r >= 0x30 && r <= 0x39) || r === 0x23 || r === 0x2a;
+}
+
+export function emojiHasSameTones(a: string, b: string) {
+  const at = tonesForEmoji(a);
+  const bt = tonesForEmoji(b);
+
+  if (at.length !== bt.length) {
+    return false;
+  }
+  for (let i = 0; i < at.length; ++i) {
+    if (at[i] !== bt[i]) {
+      return false;
+    }
+  }
+  return true;
 }
