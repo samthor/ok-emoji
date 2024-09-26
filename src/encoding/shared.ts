@@ -1,3 +1,5 @@
+const expandAllDescription = ['family', 'couple with heart', 'kiss'];
+
 /**
  * Expands a pt string back to a friendly name.
  */
@@ -42,7 +44,7 @@ export function personTypeAll(pt: string | undefined, key?: string) {
     return '';
   }
 
-  if (['family', 'couple with heart', 'kiss'].includes(key!)) {
+  if (expandAllDescription.includes(key!)) {
     // splay out normally
     return [...pt]
       .map((each) => personTypeAllData[each] ?? '')

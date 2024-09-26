@@ -1,5 +1,5 @@
 import { codepointsFor } from './forms.ts';
-import { splitFixed } from './string.ts';
+import { splitFixed } from './helper.ts';
 
 export type EmojiLine = {
   /**

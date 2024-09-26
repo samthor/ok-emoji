@@ -1,4 +1,4 @@
-import { splitFixed } from './string.ts';
+import { splitFixed } from './helper.ts';
 import { tonesToFitz } from './tone.ts';
 
 export type DescriptionParts = {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import * as assert from 'node:assert';
-import { qualifyEmoji } from './forms.ts';
+import { buildQualifyEmoji, buildPlatformMustQualify } from './forms.ts';
 
 const expectedQualifyResult: Record<string, string> = {
   '🎎': '🎎',
@@ -16,6 +16,8 @@ const expectedQualifyResult: Record<string, string> = {
 };
 
 test('qualify check', () => {
+  const qualifyEmoji = buildQualifyEmoji(buildPlatformMustQualify()!);
+
   for (const [src, expected] of Object.entries(expectedQualifyResult)) {
     const actual = qualifyEmoji(src);
     assert.strictEqual(actual, expected);

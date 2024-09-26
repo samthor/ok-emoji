@@ -1,7 +1,7 @@
 import type { ClassifyOut } from '../classify.ts';
 import { type EmojiData, type EncodedAllEmojiData, expandPersonType } from './shared.ts';
 
-export function encodeAllEmojiData(all: EmojiData[]) {
+export function encodeAllEmojiData(all: EmojiData[]): EncodedAllEmojiData {
   const out: EncodedAllEmojiData = {};
 
   const byKey: Record<string, EmojiData[]> = {};

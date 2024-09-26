@@ -2,7 +2,7 @@ import { expandPersonType, type EmojiData, type EncodedAllEmojiData } from './sh
 
 const decodeRe = /^(?:([^#]*)#|)(.*?)(?:|\|(.*))$/;
 
-export function decodeAllEmojiData(enc: EncodedAllEmojiData) {
+export function decodeAllEmojiData(enc: EncodedAllEmojiData): EmojiData[] {
   const out: EmojiData[] = [];
 
   const seen = new Set<string>();

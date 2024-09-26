@@ -34,7 +34,7 @@ export function classifyAllEmoji(it: Iterable<EmojiLine>): ClassifyOut {
   return allByName;
 }
 
-export function reconcileKeyGroup(name: string, all: ClassifyEach[]) {
+function reconcileKeyGroup(name: string, all: ClassifyEach[]) {
   // find the max of everything and reconcile the rest
   let toneCount = 0;
   const hasDir = new Set<string>();

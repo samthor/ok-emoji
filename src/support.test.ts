@@ -1,7 +1,8 @@
 import test from 'node:test';
 import * as assert from 'node:assert';
-import { supportsSingleEmoji, supportsSingleEmojiLegacy } from './support.ts';
+import { supportsSingleEmoji } from './support.ts';
 import { codepointsFor } from './forms.ts';
+import { buildSupportsSingleEmojiLegacy } from './support-legacy.ts';
 
 const expectedEmojiResult: Record<string, { support: boolean; note?: string }> = {
   '🎎': { support: true },
@@ -36,6 +37,7 @@ test('emoji check', () => {
 
 test('emoji legacy check', () => {
   const skipped: string[] = [];
+  const supportsSingleEmojiLegacy = buildSupportsSingleEmojiLegacy()!;
 
   for (const [key, { support, note }] of Object.entries(expectedEmojiResult)) {
     const actual = supportsSingleEmojiLegacy(key);

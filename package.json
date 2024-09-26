@@ -1,14 +1,22 @@
 {
   "devDependencies": {
-    "@types/node": "^22.5.5"
+    "@types/node": "^22.5.5",
+    "esbuild": "^0.24.0"
   },
   "type": "module",
   "scripts": {
-    "test": "NODE_OPTIONS='--experimental-transform-types --disable-warning=ExperimentalWarning' node --test **/*test.ts"
+    "test": "NODE_OPTIONS='--experimental-transform-types --disable-warning=ExperimentalWarning' node --test **/*test.ts",
+    "build": "esbuild --format=esm --bundle --outfile=index.js --platform=neutral src/index.ts",
+    "prepublishOnly": "node --run build"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./index.js"
+    }
   },
   "name": "ok-emoji",
   "version": "4.0.0",
-  "private": true,
   "author": "Sam Thorogood <sam.thorogood@gmail.com>",
   "license": "Apache-2.0"
 }
