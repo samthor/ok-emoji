@@ -1,63 +1,70 @@
 const expandAllDescription = ['family', 'couple with heart', 'kiss'];
 
 /**
- * Expands a pt string back to a friendly name.
+ * Should the suffix always be used for this raw emoji name. Just hard-coded.
  */
-export function expandPersonType(pt: string | undefined, name: string) {
-  if (pt === undefined) {
-    return name;
+export function alwaysPersonTypeSuffix(description: string) {
+  return expandAllDescription.includes(description);
+}
+
+/**
+ * Expands a 'peron type' string into friendly name options.
+ */
+export function expandPersonTypeOptions(pt: string | undefined):
+  | {
+      prefix?: string;
+      suffix: string;
+    }
+  | { prefix?: never; suffix?: never } {
+  if (!pt) {
+    return {};
   }
 
-  switch (pt) {
-    case 'w':
-      return `woman ${name}`;
-    case 'm':
-      return `man ${name}`;
-    case 'p':
-      return `person ${name}`;
-    case 'pp':
-      return `people ${name}`;
-    case 'ww':
-      return `women ${name}`;
-    case 'wm':
-      return `woman and man ${name}`;
-    case 'mw':
-      return `man and woman ${name}`;
-    case 'mm':
-      return `men ${name}`;
+  const prefix: string | undefined = personTypeAllData[pt];
+
+  if (/^[pc]+$/.test(pt)) {
+    pt = pt.replaceAll('p', 'a');
   }
-  return undefined;
+  const suffix = [...pt]
+    .map((each) => personTypeAllData[each])
+    .filter((x) => x)
+    .join(', ');
+
+  return { prefix, suffix };
+}
+
+export function expandPersonType(pt: string | undefined, key: string) {
+  const options = expandPersonTypeOptions(pt);
+  if (!options.suffix) {
+    return key;
+  }
+
+  if (!options.prefix || alwaysPersonTypeSuffix(key)) {
+    if (key.includes(': ')) {
+      return key.replace(': ', `: ${options.suffix}, `);
+    }
+    return `${key}: ${options.suffix}`;
+  }
+  return `${options.prefix} ${key}`;
 }
 
 export const personTypeAllData: Record<string, string> = {
   '?': 'default',
-  p: 'adult', // not used normally, just for family render
+  p: 'person', // replaced to 'adult' when only children exist
   w: 'woman',
   m: 'man',
   c: 'child',
   g: 'girl',
   b: 'boy',
+
+  a: 'adult',
+
+  ww: 'women',
+  wm: 'woman and man',
+  mw: 'man and woman',
+  mm: 'men',
+  pp: 'people',
 };
-
-export function personTypeAll(pt: string | undefined, key?: string) {
-  if (!pt) {
-    return '';
-  }
-
-  if (expandAllDescription.includes(key!)) {
-    // splay out normally
-    return [...pt]
-      .map((each) => personTypeAllData[each] ?? '')
-      .filter((x) => x)
-      .join(', ');
-  }
-
-  const out = expandPersonType(pt, '')?.trim();
-  if (!out) {
-    throw new Error(`could not expand: ${pt}`);
-  }
-  return out;
-}
 
 export type EmojiData = {
   key: string;

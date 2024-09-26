@@ -34,7 +34,7 @@ export function encodeAllEmojiData(all: EmojiData[]): EncodedAllEmojiData {
         line += '|' + each.tones.join(',');
       }
 
-      const guessName = expandPersonType(each.pt, key) ?? key;
+      const guessName = expandPersonType(each.pt, key);
       if (each.description !== guessName) {
         line = `${each.description}#` + line;
       }

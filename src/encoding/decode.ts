@@ -28,7 +28,7 @@ export function decodeAllEmojiData(enc: EncodedAllEmojiData): EmojiData[] {
       }
 
       const [emoji, pt, dir] = m[2].split(',');
-      let description = m[1] || expandPersonType(pt, key) || key;
+      let description = m[1] || expandPersonType(pt, key);
 
       if (description.startsWith('~')) {
         description = description.substring(1);
