@@ -22,6 +22,80 @@ export function codepointsFor(s: string): number[] {
 }
 
 /**
+ * Counts emoji from a long strong, as they are to be rendered.
+ *
+ * This is sublty different per-platform based on flag support.
+ */
+export function countEmojiRender(
+  s: string,
+  supportFlag?: (a: number, b: number) => boolean | undefined,
+) {
+  supportFlag ??= () => true;
+
+  let cp = codepointsFor(unqualifyEmoji(s));
+  let count = 0;
+
+  while (cp.length) {
+    ++count;
+
+    // consume normal flag
+    if (isFlagPartCodePoint(cp[0])) {
+      if (!isFlagPartCodePoint(cp[1] || 0) || !supportFlag(cp[0], cp[1])) {
+        // solo flag point or unsupported (consume solo)
+        cp = cp.slice(1);
+      } else if (supportFlag(cp[0], cp[1])) {
+        // flag
+        cp = cp.slice(2);
+      }
+      continue;
+    }
+
+    // consume region flag
+    if (cp[0] === 0x1f3f4 && isTag(cp[1])) {
+      let i = 1;
+      while (cp[i]) {
+        if (!isTag(cp[i])) {
+          if (cp[i] === 0xe007f) {
+            ++i;
+          }
+          break;
+        }
+        ++i;
+      }
+
+      cp = cp.slice(i);
+      continue;
+    }
+
+    // consume keycap
+    if (cp[1] === 0x20e3) {
+      cp = cp.slice(2);
+      continue;
+    }
+
+    // consume normal (+ZWJ)
+    while (cp.length) {
+      if (isSkinToneModifier(cp[1])) {
+        cp = cp.slice(2);
+      } else {
+        cp = cp.slice(1);
+      }
+
+      if (cp[0] !== 0x200d) {
+        break;
+      }
+      cp = cp.slice(1);
+    }
+  }
+
+  return count;
+}
+
+function isTag(r: number) {
+  return r >= 0xe0020 && r <= 0xe007e;
+}
+
+/**
  * Builds a helper which returns whether the given single emoji codepoint needs a qualifier.
  * Does not return a function if this is not supported here (pre-2020).
  *

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import * as assert from 'node:assert';
-import { buildQualifyEmoji, buildPlatformMustQualify } from './forms.ts';
+import { buildQualifyEmoji, buildPlatformMustQualify, countEmojiRender } from './forms.ts';
 
 const expectedQualifyResult: Record<string, string> = {
   '🎎': '🎎',
@@ -21,5 +21,22 @@ test('qualify check', () => {
   for (const [src, expected] of Object.entries(expectedQualifyResult)) {
     const actual = qualifyEmoji(src);
     assert.strictEqual(actual, expected);
+  }
+});
+
+const expectedCounts: Record<string, number> = {
+  '🔥🚒🔥🚒': 4,
+  '❤️💗': 2,
+  '🤯👏🖖🔥🔥🔥': 6,
+  '🧑‍🤝‍🧑': 1,
+  '5️⃣5️⃣5️⃣': 3,
+  '5️⃣🧑‍🤝‍🧑5️⃣5️⃣': 4,
+  '🏴󠁧󠁢󠁳󠁣󠁴󠁿🇺🇲': 2,
+};
+
+test('count', () => {
+  for (const [src, expected] of Object.entries(expectedCounts)) {
+    const actual = countEmojiRender(src);
+    assert.strictEqual(actual, expected, `mismatch ${src}, actual=${actual} expected=${expected}`);
   }
 });
