@@ -22,7 +22,7 @@ export function codepointsFor(s: string): number[] {
 }
 
 /**
- * Counts emoji from a long strong, as they are to be rendered.
+ * Counts emoji from a long string, as they are to be rendered.
  *
  * This is sublty different per-platform based on flag support.
  */
@@ -40,10 +40,13 @@ export function countEmojiRender(
 
     // consume normal flag
     if (isFlagPartCodePoint(cp[0])) {
-      if (!isFlagPartCodePoint(cp[1] || 0) || !supportFlag(cp[0], cp[1])) {
-        // solo flag point or unsupported (consume solo)
+      if (!isFlagPartCodePoint(cp[1] || 0)) {
+        // not a pair
         cp = cp.slice(1);
-      } else if (supportFlag(cp[0], cp[1])) {
+      } else if (!supportFlag(cp[0], cp[1])) {
+        // unsupported
+        cp = cp.slice(1);
+      } else {
         // flag
         cp = cp.slice(2);
       }
