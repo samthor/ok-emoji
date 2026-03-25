@@ -24,16 +24,21 @@ export function encodeAllEmojiData(all: EmojiData[]): EncodedAllEmojiData {
     }
 
     out[key] = allForKey.map((each) => {
+      // parts are: emoji, pt (person type), dir (direction)
       const parts = [each.emoji, each.pt ?? '', each.dir ?? ''];
+      // trim empty parts from the right
       while (parts.at(-1) === '') {
         parts.pop();
       }
       let line = parts.join(',');
 
+      // suffix with "|" and comma-separated tones if there is any
+      // it's likely possible to just add tones to emoji by code, but this data isn't that big
       if (each.tones) {
         line += '|' + each.tones.join(',');
       }
 
+      // prepend description with "#" if it differs from the guessed name
       const guessName = expandPersonType(each.pt, key);
       if (each.description !== guessName) {
         line = `${each.description}#` + line;

@@ -1,11 +1,7 @@
 import { isStandardPart } from './classify-description.ts';
 import { tonesForEmoji } from './forms.ts';
 import { splitFixed } from './helper.ts';
-
-export const tonesToFitz: Record<string, string> = {};
-export const fitzTones = ['light', 'medium-light', 'medium', 'medium-dark', 'dark'];
-
-fitzTones.forEach((tone, index) => (tonesToFitz[tone + ' skin tone'] = String(index + 1)));
+import { fitzTones, tonesToFitz } from './const.ts';
 
 /**
  * Given an emoji name and its toned emoji versions, expand to their full names.

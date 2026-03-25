@@ -102,63 +102,48 @@ function isTag(r: number) {
   return r >= 0xe0020 && r <= 0xe007e;
 }
 
-/**
- * Builds a helper which returns whether the given single emoji codepoint needs a qualifier.
- * Does not return a function if this is not supported here (pre-2020).
- *
- * The helper returns `undefined` if this is not seen as an emoji, but `true` or `false` otherwise.
- */
-export function buildPlatformMustQualify(): undefined | ((r: number) => boolean | undefined) {
-  let emojiRe: RegExp;
-  let emojiNeedsQualifierRe: RegExp;
+const emojiRe = /^\p{Emoji}$/u;
+const emojiNeedsQualifierRe = /^\P{Emoji_Presentation}$/u;
 
-  try {
-    emojiRe = /^\p{Emoji}$/u;
-    emojiNeedsQualifierRe = /^\P{Emoji_Presentation}$/u;
-  } catch {
+/**
+ * Returns whether the given single emoji codepoint needs a qualifier.
+ *
+ * Returns `undefined` if the environment does not believe this is an emoji.
+ */
+export function mustQualify(r: number): boolean | undefined {
+  const s = String.fromCodePoint(r);
+  if (!emojiRe.test(s)) {
     return undefined;
   }
-
-  return (r: number) => {
-    const s = String.fromCodePoint(r);
-    if (!emojiRe.test(s)) {
-      return undefined;
-    }
-    return emojiNeedsQualifierRe.test(s);
-  };
+  return emojiNeedsQualifierRe.test(s);
 }
 
 /**
- * Builds a helper which qualifies an emoji string. This is a builder as you may not have
- * `\p{Emoji}` or `\p{Emoji_Presentation}` support.
+ * Builds a helper which qualifies a string which may contain emoji.
  */
-export function buildQualifyEmoji(
-  mustQualify: (r: number) => boolean | undefined,
-): (raw: string) => string {
-  return (raw) => {
-    const cp = codepointsFor(raw);
+export function qualifyEmojiString(raw: string): string {
+  const cp = codepointsFor(raw);
 
-    const out: number[] = [];
-    for (let i = 0; i < cp.length; ++i) {
-      const x = cp[i];
-      if (x === runeZWJ) {
-        continue;
-      }
-      out.push(x);
+  const out: number[] = [];
+  for (let i = 0; i < cp.length; ++i) {
+    const x = cp[i];
+    if (x === runeZWJ) {
+      continue;
+    }
+    out.push(x);
 
-      // tone acts as qualifier
-      if (isSkinToneModifier(cp[i + 1] ?? 0)) {
-        continue;
-      }
-
-      // otherwise, add a ZWJ
-      if (mustQualify(x)) {
-        out.push(runeZWJ);
-      }
+    // tone acts as qualifier
+    if (isSkinToneModifier(cp[i + 1] ?? 0)) {
+      continue;
     }
 
-    return String.fromCodePoint(...out);
-  };
+    // otherwise, add a ZWJ
+    if (mustQualify(x)) {
+      out.push(runeZWJ);
+    }
+  }
+
+  return String.fromCodePoint(...out);
 }
 
 /**

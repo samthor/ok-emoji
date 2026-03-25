@@ -3,14 +3,21 @@
  * @fileoverview Generates classified/encoded emoji data.
  */
 
-import { classifyAllEmoji } from './src/classify.ts';
-import { decodeAllEmojiData } from './src/encoding/decode.ts';
-import { buildAllEmojiData, encodeAllEmojiData } from './src/encoding/encode.ts';
-import { iterateEmojiTest } from './src/parser.ts';
-import * as fs from 'node:fs';
+import { classifyAllEmoji } from '../src/classify.ts';
+import { decodeAllEmojiData } from '../src/encoding/decode.ts';
+import { buildAllEmojiData, encodeAllEmojiData } from '../src/encoding/encode.ts';
+import { iterateEmojiTest } from '../src/parser.ts';
 import * as zlib from 'node:zlib';
 
-const it = iterateEmojiTest(fs.readFileSync('emoji-test.txt', 'utf-8'));
+const r = await fetch('https://www.unicode.org/Public/emoji/latest/emoji-test.txt');
+if (!r.ok) {
+  throw new Error(`non-ok status: ${r.status}`);
+}
+const data = await r.text();
+
+console.warn('got emoji-test.txt', data.length);
+
+const it = iterateEmojiTest(data);
 const c = classifyAllEmoji(it);
 const all = buildAllEmojiData(c);
 const enc = encodeAllEmojiData(all);

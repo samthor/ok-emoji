@@ -5,8 +5,9 @@
   },
   "type": "module",
   "scripts": {
-    "test": "NODE_OPTIONS='--experimental-transform-types --disable-warning=ExperimentalWarning' node --test **/*test.ts",
+    "test": "NODE_OPTIONS='--experimental-transform-types --disable-warning=ExperimentalWarning' node --test test.ts 'src/**/*.test.ts'",
     "build": "esbuild --format=esm --bundle --outfile=index.js --platform=neutral src/index.ts",
+    "enc": "./scripts/build-enc.ts > enc.json",
     "prepublishOnly": "node --run build"
   },
   "exports": {

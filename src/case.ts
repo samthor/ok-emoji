@@ -1,20 +1,4 @@
-// TODO: can we be more generic here - what can we do in JS to "ASCII-ify" the data?
-const expectedDashReplacements: Record<string, string> = {
-  ñ: 'n',
-  Å: 'A',
-  é: 'e',
-  ô: 'o',
-  ç: 'c',
-  å: 'a',
-  ã: 'a',
-  í: 'i',
-  ü: 'u',
-};
-
-const specialDashCase: Record<string, string> = {
-  'keycap: #': 'keycap-hash',
-  'keycap: *': 'keycap-star',
-};
+import { specialDashCase, friendlyReplacements } from './const.ts';
 
 /**
  * Converts the raw description from the Emoji corpus into a lower-case dash-case format.
@@ -28,23 +12,14 @@ export function dashCase(raw: string) {
   }
 
   return raw
+    .normalize('NFD') // decompose letters into base + diacritics
+    .replace(/[\u0300-\u036f]/g, '') // remove diacritics
     .toLowerCase()
-    .replaceAll(/[^\w :-]/g, (c) => expectedDashReplacements[c] ?? '')
+    .replace(/[^\w :-]/g, '')
     .split(/[^\w]/g)
     .filter((x) => x)
     .join('-');
 }
-
-const friendlyReplacements: [RegExp, string][] = [
-  // fix bad quotes
-  [/[“”]/g, `"`],
-  // fix apostrophe
-  [/’/g, `'`],
-  // fix "Woman'S clothes"
-  [/'S\b/g, `'s`],
-  // fix "D'Ivoire"
-  [/\bD'/g, `d'`],
-];
 
 /**
  * Converts the raw description from the Emoji corpus into a relatively friendly display title.

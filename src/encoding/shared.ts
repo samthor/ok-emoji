@@ -1,4 +1,5 @@
-const expandAllDescription = ['family', 'couple with heart', 'kiss'];
+import { personTypeAllData } from '../classify-description.ts';
+import { expandAllDescription } from '../const.ts';
 
 /**
  * Should the suffix always be used for this raw emoji name. Just hard-coded.
@@ -22,6 +23,7 @@ export function expandPersonTypeOptions(pt: string | undefined):
 
   const prefix: string | undefined = personTypeAllData[pt];
 
+  // if this is [p]erson and [c]hildren, replace [p]erson -> [a]dult
   if (/^[pc]+$/.test(pt)) {
     pt = pt.replaceAll('p', 'a');
   }
@@ -47,24 +49,6 @@ export function expandPersonType(pt: string | undefined, key: string) {
   }
   return `${options.prefix} ${key}`;
 }
-
-export const personTypeAllData: Record<string, string> = {
-  '?': 'default',
-  p: 'person', // replaced to 'adult' when only children exist
-  w: 'woman',
-  m: 'man',
-  c: 'child',
-  g: 'girl',
-  b: 'boy',
-
-  a: 'adult',
-
-  ww: 'women',
-  wm: 'woman and man',
-  mw: 'man and woman',
-  mm: 'men',
-  pp: 'people',
-};
 
 export type EmojiData = {
   key: string;

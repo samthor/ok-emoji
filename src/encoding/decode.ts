@@ -1,5 +1,6 @@
 import { expandPersonType, type EmojiData, type EncodedAllEmojiData } from './shared.ts';
 
+// format is: [description#]emoji,pt,dir[|tones]
 const decodeRe = /^(?:([^#]*)#|)(.*?)(?:|\|(.*))$/;
 
 export function decodeAllEmojiData(enc: EncodedAllEmojiData): EmojiData[] {
@@ -20,6 +21,7 @@ export function decodeAllEmojiData(enc: EncodedAllEmojiData): EmojiData[] {
       }
 
       let tones: string[] | undefined;
+      // parse comma-separated tones
       if (m[3]) {
         tones = m[3].split(',');
         if (!(tones.length === 5 || tones.length === 25)) {
@@ -27,9 +29,11 @@ export function decodeAllEmojiData(enc: EncodedAllEmojiData): EmojiData[] {
         }
       }
 
+      // split comma-separated properties
       const [emoji, pt, dir] = m[2].split(',');
       let description = m[1] || expandPersonType(pt, key);
 
+      // remove leading tilde from description (for components)
       if (description.startsWith('~')) {
         description = description.substring(1);
       }

@@ -1,5 +1,6 @@
 import { splitFixed } from './helper.ts';
-import { tonesToFitz } from './tone.ts';
+import { tonesToFitz } from './const.ts';
+import { specialNamePersonType } from './const.ts';
 
 /**
  * Describes an emoji, including its base name plus:
@@ -54,38 +55,6 @@ export function descriptionParts(description: string): DescriptionParts {
   return dp;
 }
 
-const specialNamePersonType: Record<string, { raw: string; name: string }> = {
-  // --child case (no other emoji child)
-  child: { raw: 'person', name: 'child' },
-  boy: { raw: 'man', name: 'child' },
-  girl: { raw: 'woman', name: 'child' },
-
-  // --base person case (need sensible name)
-  person: { raw: 'person', name: 'person' },
-  man: { raw: 'man', name: 'person' },
-  woman: { raw: 'woman', name: 'person' },
-
-  // --merpeople
-  merperson: { raw: 'person', name: 'merperson' },
-  merman: { raw: 'man', name: 'merperson' },
-  mermaid: { raw: 'woman', name: 'merperson' },
-
-  // --royalty
-  // 'person with crown': { raw: 'person', name: 'with crown' },
-  prince: { raw: 'man', name: 'with crown' },
-  princess: { raw: 'woman', name: 'with crown' },
-
-  // --santa
-  'Mx Claus': { raw: 'person', name: 'santa' },
-  'Santa Claus': { raw: 'man', name: 'santa' },
-  'Mrs. Claus': { raw: 'woman', name: 'santa' },
-
-  // --old
-  'older person': { raw: 'person', name: 'old' },
-  // 'old man': { raw: 'man', name: 'old' },
-  // 'old woman': { raw: 'woman', name: 'old' },
-};
-
 function extractNamePersonType(name: string) {
   const m = (() => {
     if (name in specialNamePersonType) {
@@ -120,8 +89,6 @@ function extractNamePersonType(name: string) {
   return { name: m.name, pt };
 }
 
-const personKeyOrder = 'pwmcgb';
-
 /**
  * Sorts a person type key, made of "pwmcgb" characters.
  */
@@ -137,6 +104,27 @@ export function sortPersonKey(a: string, b: string) {
 
   return 0;
 }
+
+const personKeyOrder = 'pwmcgb';
+
+// abbreviations for person types
+export const personTypeAllData: Record<string, string> = {
+  '?': 'default',
+  p: 'person', // replaced to 'adult' when only children exist
+  w: 'woman',
+  m: 'man',
+  c: 'child',
+  g: 'girl',
+  b: 'boy',
+
+  a: 'adult',
+
+  ww: 'women',
+  wm: 'woman and man',
+  mw: 'man and woman',
+  mm: 'men',
+  pp: 'people',
+};
 
 /**
  * Converts a person type string into one of:
