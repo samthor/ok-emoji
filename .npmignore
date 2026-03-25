@@ -3,5 +3,4 @@ scripts/
 *.txt
 *.json
 *.html
-*.ts
 demo/
