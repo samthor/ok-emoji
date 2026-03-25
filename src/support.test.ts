@@ -7,6 +7,7 @@ const expectedEmojiResult: Record<string, { support: boolean; note?: string }> =
   '🪏': { support: true, note: 'Test environment now supports Unicode 16.0!' },
   '👋🏼': { support: true, note: 'Complex emoji from Unicode 1.0' },
   '👨🏾‍🦱': { support: true, note: 'Complex emoji from Unicode 11.0' },
+  '🫪': { support: true, note: 'Simple emoji from Unicode 17.0' },
 
   '🈂️': { support: true },
   '♀️': { support: true },

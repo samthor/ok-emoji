@@ -1,7 +1,8 @@
 {
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "esbuild": "^0.27.4"
+    "esbuild": "^0.27.4",
+    "vite": "^8.0.2"
   },
   "type": "module",
   "scripts": {
@@ -17,7 +18,7 @@
     }
   },
   "name": "ok-emoji",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "author": "Sam Thorogood <sam.thorogood@gmail.com>",
   "license": "Apache-2.0"
 }
