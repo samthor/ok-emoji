@@ -3,7 +3,8 @@ import { splitFixed } from './helper.ts';
 
 export type EmojiLine = {
   /**
-   * The string emoji with `0xfe0f` as required. Can split for codepoints.
+   * The string emoji.
+   * Includes ZWJs, will always be fully-qualified.
    */
   emoji: string;
 
@@ -13,12 +14,14 @@ export type EmojiLine = {
   qualifier: 'fully-qualified' | 'component';
 
   /**
-   * Version in integer. 0.6 is 60, 16.0 is 1600.
+   * Version in integer.
+   * 0.6 is 60, 16.0 is 1600.
    */
   version: number;
 
   /**
-   * Description. Can be used to create dashCase name.
+   * Description as per source data, i.e., the emoji name.
+   * Can be used to create dashCase name.
    */
   description: string;
 

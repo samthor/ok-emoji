@@ -1,6 +1,13 @@
 import { splitFixed } from './helper.ts';
 import { tonesToFitz } from './tone.ts';
 
+/**
+ * Describes an emoji, including its base name plus:
+ *
+ * - whether it has a skin tone
+ * - whether it has a person type (e.g. "wm" for woman-man holding hands)
+ * - if it has a strict direction.
+ */
 export type DescriptionParts = {
   name: string;
   tones?: string;
@@ -142,7 +149,7 @@ export function sortPersonKey(a: string, b: string) {
  *
  * Or multiple of those (max 2).
  */
-function flattenLongPersonType(raw: string) {
+function flattenLongPersonType(raw: string): string | undefined {
   switch (raw) {
     case 'people':
       return 'pp';

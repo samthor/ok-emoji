@@ -8,7 +8,7 @@ export function alwaysPersonTypeSuffix(description: string) {
 }
 
 /**
- * Expands a 'peron type' string into friendly name options.
+ * Expands a 'person type' string into friendly name options.
  */
 export function expandPersonTypeOptions(pt: string | undefined):
   | {

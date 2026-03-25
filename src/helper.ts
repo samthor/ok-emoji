@@ -1,10 +1,14 @@
 /**
- * Splits the raw input into at most `count` substrings split by `by`. The last segment contains
- * the rest of the string.
+ * Splits the raw input into at most `count` substrings split by `by`.
  *
- * This may return fewer components.
+ * The last segment contains the rest of the string.
+ * For instance, if `count` is one, simply returns the entire string.
+ *
+ * Count values <=0 return an empty array.
+ *
+ * This may return fewer components if there are not enough valid substrings.
  */
-export function splitFixed(raw: string, by: string, count: number) {
+export function splitFixed(raw: string, by: string, count: number): string[] {
   const out: string[] = [];
 
   let index = 0;
@@ -23,31 +27,4 @@ export function splitFixed(raw: string, by: string, count: number) {
   }
 
   return out;
-}
-
-/**
- * Cache helper, just used for legacy for now.
- */
-export function buildCache(
-  helper: (raw: string) => boolean | undefined,
-): (raw: string) => boolean | undefined {
-  const m = new Map<string, boolean | undefined>();
-
-  return (raw: string) => {
-    if (m.has(raw)) {
-      return m.get(raw);
-    }
-
-    // laziest FIFO cache ever
-    if (m.size === 2_000) {
-      for (const firstKey of m.keys()) {
-        m.delete(firstKey);
-        break;
-      }
-    }
-
-    const out = helper(raw);
-    m.set(raw, out);
-    return out;
-  };
 }

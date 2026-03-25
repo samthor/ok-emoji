@@ -1,3 +1,4 @@
+// TODO: can we be more generic here - what can we do in JS to "ASCII-ify" the data?
 const expectedDashReplacements: Record<string, string> = {
   ñ: 'n',
   Å: 'A',
@@ -16,11 +17,10 @@ const specialDashCase: Record<string, string> = {
 };
 
 /**
- * Converts the raw description from the Emoji corpus into a lower-case dash-case format. This
- * should return a string matching the regular expression `[a-z0-9]+(-[a-z0-9]+)*`.
+ * Converts the raw description from the Emoji corpus into a lower-case dash-case format.
+ * This must return a string matching the regular expression `[a-z0-9]+(-[a-z0-9]+)*`.
  *
- * Because it normalizes the input, this should be the same for the friendly name or the raw
- * description data.
+ * Because it normalizes the input, this should be the same for the friendly name via {@link friendlyCase} or the raw description data.
  */
 export function dashCase(raw: string) {
   if (raw in specialDashCase) {
@@ -51,7 +51,7 @@ const friendlyReplacements: [RegExp, string][] = [
  */
 export function friendlyCase(raw: string) {
   if (raw.length === 3 && /[^aeiou]{2}\w/.test(raw)) {
-    // catches DVD/DNA (consonant / consonant / any)
+    // catches DVD/DNA (consonant / consonant / any) - should always be an INITIALISM
     return raw.toUpperCase();
   }
 

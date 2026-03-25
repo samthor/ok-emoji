@@ -1,12 +1,10 @@
 import test from 'node:test';
 import * as assert from 'node:assert';
 import { supportsSingleEmoji } from './support.ts';
-import { codepointsFor } from './forms.ts';
-import { buildSupportsSingleEmojiLegacy } from './support-legacy.ts';
 
 const expectedEmojiResult: Record<string, { support: boolean; note?: string }> = {
   '🎎': { support: true },
-  '🪏': { support: false, note: 'Test environment now supports Unicode 16.0!' },
+  '🪏': { support: true, note: 'Test environment now supports Unicode 16.0!' },
   '👋🏼': { support: true, note: 'Complex emoji from Unicode 1.0' },
   '👨🏾‍🦱': { support: true, note: 'Complex emoji from Unicode 11.0' },
 
@@ -24,39 +22,15 @@ const expectedEmojiResult: Record<string, { support: boolean; note?: string }> =
 
   '': { support: false, note: 'Should not support "Shibuya 109"' },
 
-  '🇨🇶': { support: false, note: 'Should not support unknown flag' },
+  '🇨🇶': { support: true, note: 'Should support new flag' },
   '🇦🇺': { support: true, note: 'Should support flag' },
+
+  '🇦🇦': { support: false, note: 'Should not support unknown flag (AA)' },
 };
 
 test('emoji check', () => {
   for (const [key, { support, note }] of Object.entries(expectedEmojiResult)) {
     const actual = supportsSingleEmoji(key);
     assert.strictEqual(actual, support, note);
-  }
-});
-
-test('emoji legacy check', () => {
-  const skipped: string[] = [];
-  const supportsSingleEmojiLegacy = buildSupportsSingleEmojiLegacy()!;
-
-  for (const [key, { support, note }] of Object.entries(expectedEmojiResult)) {
-    const actual = supportsSingleEmojiLegacy(key);
-    if (actual === undefined) {
-      skipped.push(key);
-      continue;
-    }
-    assert.strictEqual(actual, support, note);
-  }
-
-  if (skipped.length) {
-    console.warn(
-      'Skipped legacy emoji checks for:',
-      skipped.map((e) => {
-        return {
-          emoji: e,
-          codepoints: codepointsFor(e).map((x) => x.toString(16)),
-        };
-      }),
-    );
   }
 });

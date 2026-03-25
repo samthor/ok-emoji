@@ -1,4 +1,7 @@
 #!/usr/bin/env node --experimental-strip-types
+/**
+ * @fileoverview Generates classified/encoded emoji data.
+ */
 
 import { classifyAllEmoji } from './src/classify.ts';
 import { decodeAllEmojiData } from './src/encoding/decode.ts';
@@ -12,16 +15,14 @@ const c = classifyAllEmoji(it);
 const all = buildAllEmojiData(c);
 const enc = encodeAllEmojiData(all);
 
+// log the encoded data (we can use this in a pipe)
 console.info(JSON.stringify(enc, null, 2));
 
-const dec = decodeAllEmojiData(enc);
+// call to confirm we don't throw
+decodeAllEmojiData(enc);
 
-//console.warn(JSON.stringify(e.order, null, 2));
-
+// announce the actual JSON and gzipped size of the emoji classification data
 const minOut = JSON.stringify(enc);
 const size = new TextEncoder().encode(minOut).length;
-
 const gz = zlib.gzipSync(minOut);
 console.warn('size', size, 'gzipSize', gz.length);
-
-//console.info(JSON.stringify(groups, null, 2));

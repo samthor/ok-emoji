@@ -1,9 +1,17 @@
 import { type DescriptionParts, descriptionParts, sortPersonKey } from './classify-description.ts';
 import type { EmojiLine } from './parser.ts';
 
-export type ClassifyEach = { line: EmojiLine; dp: DescriptionParts };
+export type ClassifyEach = {
+  line: EmojiLine;
+  dp: DescriptionParts;
+};
 export type ClassifyOut = Record<string, ClassifyEach[]>;
 
+/**
+ * Classifies raw emoji input.
+ *
+ * This groups everything we can find together (via {@link descriptionParts}.
+ */
 export function classifyAllEmoji(it: Iterable<EmojiLine>): ClassifyOut {
   const allByName: ClassifyOut = {};
 

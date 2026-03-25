@@ -1,5 +1,8 @@
+import { runeZWJ } from './const.ts';
+
 /**
- * Split the input string into an array of codepoints. Not specifically to do with emoji.
+ * Split the input string into an array of codepoints.
+ * Not specifically to do with emoji.
  */
 export function codepointsFor(s: string): number[] {
   let i = 0;
@@ -24,12 +27,13 @@ export function codepointsFor(s: string): number[] {
 /**
  * Counts emoji from a long string, as they are to be rendered.
  *
- * This is sublty different per-platform based on flag support.
+ * This can give different lengths based on the two-rune flags supported by the environment.
+ * Pass {@link supportFlag} if needed, otherwise "all" flags will be treated as one character.
  */
 export function countEmojiRender(
   s: string,
   supportFlag?: (a: number, b: number) => boolean | undefined,
-) {
+): number {
   supportFlag ??= () => true;
 
   let cp = codepointsFor(unqualifyEmoji(s));
@@ -137,7 +141,7 @@ export function buildQualifyEmoji(
     const out: number[] = [];
     for (let i = 0; i < cp.length; ++i) {
       const x = cp[i];
-      if (x === 0xfe0f) {
+      if (x === runeZWJ) {
         continue;
       }
       out.push(x);
@@ -147,9 +151,9 @@ export function buildQualifyEmoji(
         continue;
       }
 
-      // otherwise, add 0xfe0f
+      // otherwise, add a ZWJ
       if (mustQualify(x)) {
-        out.push(0xfe0f);
+        out.push(runeZWJ);
       }
     }
 
@@ -158,10 +162,11 @@ export function buildQualifyEmoji(
 }
 
 /**
- * Unqualify this emoji (singular or multiple). Just removes all `0xfe0f` characters.
+ * Unqualify this emoji (singular or multiple).
+ * Just removes all ZWJ characters.
  */
 export function unqualifyEmoji(x: string): string {
-  return x.replaceAll('\u{fe0f}', '');
+  return x.replaceAll(String.fromCodePoint(runeZWJ), '');
 }
 
 /**
