@@ -9,6 +9,8 @@
 
       const checks = ['🫪', ''];
 
+      let continueFor = 50;
+
       for (;;) {
         let anyUndefined = false;
 
@@ -23,7 +25,10 @@
         });
 
         if (!anyUndefined) {
-          break;
+          if (!continueFor) {
+            break;
+          }
+          --continueFor;
         }
 
         await new Promise((r) => window.requestAnimationFrame(r));
@@ -31,6 +36,6 @@
     </script>
   </head>
   <body>
-    <div style="font-family: AdobeBlank2">Hello</div>
+    <!-- <div style="font-family: AdobeBlank2">Hello</div> -->
   </body>
 </html>

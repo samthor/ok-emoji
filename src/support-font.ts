@@ -14,7 +14,6 @@ export function buildFontEmojiCheck(): (s: string) => boolean | undefined {
 
   const measure = document.createElement('span');
   measure.className = 'ok-emoji-measure';
-  document.body.append(measure);
 
   return (s: string): boolean | undefined => {
     if (!measure.parentNode) {
@@ -25,7 +24,7 @@ export function buildFontEmojiCheck(): (s: string) => boolean | undefined {
     measure.offsetWidth; // try forcing layout _first_
 
     // we have to put something _on the page_ for this to work
-    if (!document.fonts.check('12px AdobeBlank2')) {
+    if (!document.fonts.check('8px AdobeBlank2')) {
       return undefined;
     }
 
