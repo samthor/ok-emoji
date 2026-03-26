@@ -5,7 +5,7 @@ import { buildFontEmojiCheck } from './support-font.ts';
 const supportRGIEmoji: RegExp = /^\p{RGI_Emoji}$/v;
 
 const buildSupportSingleEmoji = () => {
-  let fallback = (s: string) => false;
+  let fallback = (s: string): boolean | undefined => false;
 
   if (typeof window !== 'undefined') {
     fallback = buildFontEmojiCheck();
@@ -21,5 +21,7 @@ const buildSupportSingleEmoji = () => {
 
 /**
  * Is the singular passed emoji recognized by the current environment?
+ *
+ * If this returns `undefined`, you should call back after a frame.
  */
 export const supportsSingleEmoji = buildSupportSingleEmoji();

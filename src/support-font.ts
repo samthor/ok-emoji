@@ -6,7 +6,7 @@ const testCSS = `@font-face { /* SIL Open Font License, Version 1.1: https://git
  *
  * This is supported in Chrome 131+ and Firefox 141+.
  */
-export function buildFontEmojiCheck(): (s: string) => boolean {
+export function buildFontEmojiCheck(): (s: string) => boolean | undefined {
   const s = document.createElement('style');
   s.title = 'ok-emoji';
   s.innerHTML = testCSS;
@@ -15,7 +15,11 @@ export function buildFontEmojiCheck(): (s: string) => boolean {
   const measure = document.createElement('span');
   measure.className = 'ok-emoji-measure';
 
-  return (s: string) => {
+  return (s: string): boolean | undefined => {
+    if (!document.fonts.check('12px AdobeBlank2')) {
+      return undefined;
+    }
+
     if (!measure.parentNode) {
       document.body.append(measure);
       Promise.resolve().then(() => measure.remove());
