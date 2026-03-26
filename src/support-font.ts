@@ -14,17 +14,21 @@ export function buildFontEmojiCheck(): (s: string) => boolean | undefined {
 
   const measure = document.createElement('span');
   measure.className = 'ok-emoji-measure';
+  document.body.append(measure);
 
   return (s: string): boolean | undefined => {
-    if (!document.fonts.check('12px AdobeBlank2')) {
-      return undefined;
-    }
-
     if (!measure.parentNode) {
       document.body.append(measure);
       Promise.resolve().then(() => measure.remove());
     }
     measure.title = s;
+    measure.offsetWidth; // try forcing layout _first_
+
+    // we have to put something _on the page_ for this to work
+    if (!document.fonts.check('12px AdobeBlank2')) {
+      return undefined;
+    }
+
     return measure.offsetWidth > 0;
   };
 }

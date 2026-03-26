@@ -22,6 +22,7 @@ const buildSupportSingleEmoji = () => {
 /**
  * Is the singular passed emoji recognized by the current environment?
  *
- * If this returns `undefined`, you should call back after a frame.
+ * If this returns `undefined`, you should wait for a rAF (possibly more).
+ * This will fire in the fallback font case.
  */
 export const supportsSingleEmoji = buildSupportSingleEmoji();
